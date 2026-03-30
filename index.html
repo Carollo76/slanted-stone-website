@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slanted Stone Chalet · Poconos Mountain Retreat</title>
+<meta name="description" content="Brand new luxury chalet in the Poconos. Hot tub, sauna, game room, firepit. Sleeps 8. Book direct and save.">
+<meta property="og:title" content="Slanted Stone Chalet · Poconos Mountain Retreat">
+<meta property="og:description" content="Brand new luxury chalet in the Poconos. Hot tub, sauna, game room, firepit. Sleeps 8. Book direct and save.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --cream:#F4EDE0;--cream2:#EDE4D0;--cream3:#E5D9C4;
+  --ink:#1C1A17;--ink2:#3A3630;--muted:#8A8070;
+  --gold:#B8955A;--gold2:#C9A96E;--white:#FDFAF5;
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--cream);color:var(--ink);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+.container{max-width:1140px;margin:0 auto;padding:0 5%}
+.eyebrow{font-family:var(--sans);font-size:.7rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:.75rem}
+.section-heading{font-family:var(--serif);font-size:2.6rem;font-weight:400;line-height:1.2;margin-bottom:1.5rem}
+.fade-in{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:1.5rem 5%;transition:background .4s,padding .4s,border .4s}
+nav.scrolled{background:rgba(244,237,224,.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:1rem 5%;border-bottom:1px solid rgba(28,26,23,.08)}
+.nav-logo{font-family:var(--sans);font-size:.8rem;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--white);transition:color .3s}
+.nav-logo span{font-family:var(--serif);font-weight:400;letter-spacing:.05em;text-transform:none;font-size:1rem;margin-left:.3rem}
+nav.scrolled .nav-logo{color:var(--ink)}
+.nav-links{display:flex;gap:2.2rem;list-style:none;align-items:center}
+.nav-links a{font-size:.7rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:rgba(253,250,245,.8);transition:color .2s}
+nav.scrolled .nav-links a{color:var(--ink2)}
+.nav-links a:hover{color:var(--gold2)}
+.nav-book{background:var(--gold)!important;color:var(--white)!important;padding:.6rem 1.5rem;border-radius:2px;transition:background .2s!important}
+.nav-book:hover{background:var(--gold2)!important}
+nav.scrolled .nav-book{background:var(--ink)!important}
+nav.scrolled .nav-book:hover{background:var(--ink2)!important}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:4px;z-index:1001}
+.hamburger span{display:block;width:22px;height:1.5px;background:var(--white);transition:.3s}
+nav.scrolled .hamburger span{background:var(--ink)}
+.hamburger.open span:nth-child(1){transform:rotate(45deg) translate(4px,4px)}
+.hamburger.open span:nth-child(2){opacity:0}
+.hamburger.open span:nth-child(3){transform:rotate(-45deg) translate(4px,-4px)}
+.mobile-overlay{display:none;position:fixed;inset:0;background:var(--ink);z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:2rem;opacity:0;transition:opacity .3s}
+.mobile-overlay.open{display:flex;opacity:1}
+.mobile-overlay a{font-family:var(--serif);font-size:1.8rem;color:var(--white);transition:color .2s}
+.mobile-overlay a:hover{color:var(--gold2)}
+
+/* HERO */
+.hero{height:100vh;min-height:700px;position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 5%;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:url('images/Hero front house.jpg') 85% 30%/120% auto no-repeat;z-index:0}
+.hero-bg::after{content:'';position:absolute;inset:0;background:rgba(28,26,23,.4)}
+.hero-content{position:relative;z-index:1;max-width:700px}
+.hero-eyebrow{font-size:.7rem;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--gold2);margin-bottom:1.5rem}
+.hero h1{font-family:var(--serif);font-size:4rem;font-weight:400;color:var(--white);line-height:1.1;margin-bottom:1.2rem}
+.hero-sub{font-size:1.05rem;font-weight:300;color:rgba(253,250,245,.7);line-height:1.7;margin-bottom:2.5rem;max-width:520px;margin-left:auto;margin-right:auto}
+.hero-ctas{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+.btn-gold{display:inline-block;background:var(--gold);color:var(--white);font-size:.72rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;padding:.85rem 2rem;border-radius:2px;transition:background .2s}
+.btn-gold:hover{background:var(--gold2)}
+.btn-outline{display:inline-block;border:1px solid rgba(253,250,245,.35);color:var(--white);font-size:.72rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;padding:.85rem 2rem;border-radius:2px;transition:border-color .2s,color .2s}
+.btn-outline:hover{border-color:var(--gold2);color:var(--gold2)}
+.scroll-indicator{position:absolute;bottom:2.5rem;left:50%;transform:translateX(-50%);z-index:1;display:flex;flex-direction:column;align-items:center;gap:.5rem}
+.scroll-indicator span{font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:rgba(253,250,245,.4)}
+.scroll-indicator svg{animation:bobble 2s ease-in-out infinite}
+@keyframes bobble{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+
+/* ABOUT */
+.about{padding:7rem 0}
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
+.about-text p{font-size:.95rem;line-height:1.85;color:var(--ink2);margin-bottom:1.2rem}
+.stats{display:flex;gap:2rem;margin-top:2rem;flex-wrap:wrap}
+.stat{text-align:center}
+.stat-num{font-family:var(--serif);font-size:1.8rem;color:var(--ink);display:block}
+.stat-label{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:.2rem;display:block}
+.about-img{aspect-ratio:4/3;background:var(--cream3);border-radius:4px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.about-img svg{width:60px;height:60px;opacity:.3}
+
+/* AMENITIES */
+.amenities{padding:7rem 0;background:var(--cream2)}
+.amenities-header{text-align:center;margin-bottom:3.5rem}
+.amenities-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem}
+.amenity-card{background:var(--white);padding:2rem 1.5rem;border-radius:4px;transition:transform .25s,box-shadow .25s}
+.amenity-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(28,26,23,.06)}
+.amenity-icon{width:40px;height:40px;margin-bottom:1.2rem;color:var(--gold)}
+.amenity-card h3{font-family:var(--serif);font-size:1.1rem;font-weight:400;margin-bottom:.5rem}
+.amenity-card p{font-size:.82rem;line-height:1.65;color:var(--muted)}
+
+/* GALLERY */
+.gallery{padding:7rem 0}
+.gallery-header{text-align:center;margin-bottom:3.5rem}
+.gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:220px;gap:1rem}
+.gallery-item{background:var(--cream3);border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:transform .3s,box-shadow .3s;cursor:pointer}
+.gallery-item:hover{transform:scale(1.02);box-shadow:0 8px 30px rgba(28,26,23,.1)}
+.gallery-item.tall{grid-row:span 2}
+.gallery-item svg{width:36px;height:36px;opacity:.25}
+
+/* EXPERIENCE / LOCATION */
+.experience{padding:7rem 0;background:var(--ink);color:var(--white)}
+.experience .eyebrow{color:var(--gold2)}
+.experience .section-heading{color:var(--white)}
+.experience-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start}
+.experience-text p{font-size:.95rem;line-height:1.85;color:rgba(253,250,245,.65);margin-bottom:1.2rem}
+.attraction-list{list-style:none;display:flex;flex-direction:column;gap:0}
+.attraction-item{display:flex;justify-content:space-between;align-items:center;padding:1.1rem 0;border-bottom:1px solid rgba(253,250,245,.08)}
+.attraction-item:first-child{border-top:1px solid rgba(253,250,245,.08)}
+.attraction-name{font-size:.95rem;color:var(--white)}
+.attraction-dist{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);white-space:nowrap}
+
+/* REVIEWS */
+.reviews{padding:7rem 0}
+.reviews-header{text-align:center;margin-bottom:3.5rem}
+.rating-display{display:flex;align-items:center;justify-content:center;gap:.75rem;margin-bottom:1rem}
+.rating-num{font-family:var(--serif);font-size:2.4rem}
+.stars{display:flex;gap:2px;color:var(--gold)}
+.rating-count{font-size:.8rem;color:var(--muted)}
+.reviews-scroll{display:flex;gap:1.5rem;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:1rem;scrollbar-width:none}
+.reviews-scroll::-webkit-scrollbar{display:none}
+.review-card{flex:0 0 340px;scroll-snap-align:start;background:var(--white);border-radius:4px;padding:2rem;display:flex;flex-direction:column;gap:1rem}
+.review-stars{display:flex;gap:2px;color:var(--gold)}
+.review-card blockquote{font-family:var(--serif);font-style:italic;font-size:.95rem;line-height:1.7;color:var(--ink2);flex:1}
+.review-author{font-size:.78rem;color:var(--muted)}
+.review-source{font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-top:.2rem}
+
+/* BOOKING CTA */
+.booking{padding:7rem 0;background:var(--cream2)}
+.booking-inner{text-align:center;max-width:640px;margin:0 auto}
+.booking .section-heading{font-size:2.8rem}
+.booking-sub{font-size:1rem;line-height:1.75;color:var(--ink2);margin-bottom:2.5rem}
+.value-props{display:flex;gap:2rem;justify-content:center;margin-bottom:2.5rem;flex-wrap:wrap}
+.value-prop{text-align:center}
+.value-prop svg{width:32px;height:32px;color:var(--gold);margin:0 auto .5rem}
+.value-prop strong{display:block;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.2rem}
+.value-prop span{font-size:.78rem;color:var(--muted)}
+.btn-gold-lg{display:inline-block;background:var(--gold);color:var(--white);font-size:.78rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;padding:1.1rem 3rem;border-radius:2px;transition:background .2s}
+.btn-gold-lg:hover{background:var(--gold2)}
+.booking-contact{margin-top:2rem;font-size:.85rem;color:var(--muted)}
+.booking-contact a{color:var(--gold);border-bottom:1px solid transparent;transition:border-color .2s}
+.booking-contact a:hover{border-bottom-color:var(--gold)}
+
+/* FOOTER */
+footer{background:var(--ink);color:rgba(253,250,245,.5);padding:4rem 0 2rem}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:3rem;margin-bottom:3rem}
+.footer-brand{font-family:var(--sans);font-size:.75rem;letter-spacing:.18em;text-transform:uppercase;color:var(--white);margin-bottom:.75rem}
+.footer-brand span{font-family:var(--serif);text-transform:none;letter-spacing:.05em;font-size:.9rem;margin-left:.2rem}
+.footer-tagline{font-size:.85rem;line-height:1.7;max-width:300px}
+footer h4{font-size:.65rem;font-weight:500;letter-spacing:.15em;text-transform:uppercase;color:var(--white);margin-bottom:1rem}
+footer ul{list-style:none;display:flex;flex-direction:column;gap:.6rem}
+footer ul a{font-size:.85rem;transition:color .2s}
+footer ul a:hover{color:var(--gold2)}
+.footer-bottom{border-top:1px solid rgba(253,250,245,.08);padding-top:2rem;font-size:.75rem;display:flex;justify-content:space-between;align-items:center}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .about-grid,.experience-grid{grid-template-columns:1fr;gap:2.5rem}
+  .amenities-grid{grid-template-columns:repeat(2,1fr)}
+  .gallery-grid{grid-template-columns:repeat(2,1fr);grid-auto-rows:180px}
+  .footer-grid{grid-template-columns:1fr;gap:2rem}
+  .hero h1{font-size:3rem}
+  .section-heading{font-size:2.1rem}
+}
+@media(max-width:600px){
+  .nav-links{display:none}
+  .hamburger{display:flex}
+  .amenities-grid{grid-template-columns:1fr}
+  .gallery-grid{grid-template-columns:1fr;grid-auto-rows:200px}
+  .gallery-item.tall{grid-row:span 1}
+  .hero h1{font-size:2.4rem}
+  .hero-sub{font-size:.92rem}
+  .stats{gap:1.2rem}
+  .value-props{flex-direction:column;align-items:center}
+  .review-card{flex:0 0 280px}
+  .footer-bottom{flex-direction:column;gap:.5rem;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">SLANTED STONE <span>Chalet</span></a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#amenities">Amenities</a></li>
+    <li><a href="#gallery">Gallery</a></li>
+    <li><a href="#reviews">Reviews</a></li>
+    <li><a href="https://www.bookeddirectly.com/g/pocono-pines/pocono-retreat%253A-finnish-barrel-sauna%252C-hot-tub-%2526-arcade/c72709" target="_blank" class="nav-book">Book Now</a></li>
+  </ul>
+  <button class="hamburger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- MOBILE OVERLAY -->
+<div class="mobile-overlay">
+  <a href="#about">About</a>
+  <a href="#amenities">Amenities</a>
+  <a href="#gallery">Gallery</a>
+  <a href="#reviews">Reviews</a>
+  <a href="https://www.bookeddirectly.com/g/pocono-pines/pocono-retreat%253A-finnish-barrel-sauna%252C-hot-tub-%2526-arcade/c72709">Book Now</a>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">Pocono Pines, Pennsylvania</div>
+    <h1>Slanted Stone Chalet</h1>
+    <p class="hero-sub">A brand new luxury mountain retreat. Hot tub, sauna, game room, firepit. Sleeps 8. Book direct and save.</p>
+    <div class="hero-ctas">
+      <a href="https://www.bookeddirectly.com/g/pocono-pines/pocono-retreat%253A-finnish-barrel-sauna%252C-hot-tub-%2526-arcade/c72709" target="_blank" class="btn-gold">Book Direct &amp; Save</a>
+      <a href="#about" class="btn-outline">Explore the Chalet</a>
+    </div>
+  </div>
+  <div class="scroll-indicator">
+    <span>Scroll</span>
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M4 9l4 4 4-4" stroke="rgba(253,250,245,.4)" stroke-width="1.2"/></svg>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="about">
+  <div class="container">
+    <div class="about-grid">
+      <div class="about-text fade-in">
+        <div class="eyebrow">The Retreat</div>
+        <h2 class="section-heading">Your Mountain Escape Awaits</h2>
+        <p>Slanted Stone Chalet is a brand new luxury mountain home nestled in Pocono Pines, surrounded by national parks and pristine lakes. Designed for unforgettable getaways, every detail has been thoughtfully curated to blend modern comfort with the warmth of mountain living.</p>
+        <p>Spread across 2,900 square feet with four spacious bedrooms, three and a half baths, and room for up to eight guests, the chalet is perfect for family vacations, friend trips, or a peaceful retreat from the everyday.</p>
+        <div class="stats">
+          <div class="stat"><span class="stat-num">4</span><span class="stat-label">Bedrooms</span></div>
+          <div class="stat"><span class="stat-num">3.5</span><span class="stat-label">Bathrooms</span></div>
+          <div class="stat"><span class="stat-num">8</span><span class="stat-label">Guests</span></div>
+          <div class="stat"><span class="stat-num">2,900</span><span class="stat-label">Sq Ft</span></div>
+        </div>
+      </div>
+      <div class="about-img fade-in">
+        <img src="images/hero great room.jpg" alt="Great room with antler chandelier and mountain views" style="width:100%;height:100%;object-fit:cover">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AMENITIES -->
+<section id="amenities" class="amenities">
+  <div class="container">
+    <div class="amenities-header fade-in">
+      <div class="eyebrow">Amenities</div>
+      <h2 class="section-heading">Everything You Need and More</h2>
+    </div>
+    <div class="amenities-grid">
+      <div class="amenity-card fade-in">
+        <svg class="amenity-icon" viewBox="0 0 40 40" fill="none"><path d="M8 28c0 0 2-8 12-8s12 8 12 8" stroke="currentColor" stroke-width="1.5"/><path d="M6 28h28v4H6z" stroke="currentColor" stroke-width="1.5"/><path d="M12 32v4M28 32v4" stroke="currentColor" stroke-width="1.5"/><path d="M18 20v-6a2 2 0 114 0v6" stroke="currentColor" stroke-width="1.5"/></svg>
+        <h3>Hot Tub</h3>
+        <p>Soak under the stars in the private outdoor hot tub surrounded by forest.</p>
+      </div>
+      <div class="amenity-card fade-in">
+        <svg class="amenity-icon" viewBox="0 0 40 40" fill="none"><rect x="8" y="10" width="24" height="22" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M14 18v6M20 16v10M26 20v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <h3>Barrel Sauna</h3>
+        <p>Unwind in the outdoor barrel sauna with a stunning view of the forest.</p>
+      </div>
+      <div class="amenity-card fade-in">
+        <svg class="amenity-icon" viewBox="0 0 40 40" fill="none"><rect x="6" y="14" width="28" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="20" cy="22" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M12 14V10M28 14V10" stroke="currentColor" stroke-width="1.5"/></svg>
+        <h3>Game Loft</h3>
+        <p>Shuffleboard, oversized bean bags, and board games in the A-frame loft.</p>
+      </div>
+      <div class="amenity-card fade-in">
+        <svg class="amenity-icon" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="24" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M20 14v-4M16 16l-2-3M24 16l2-3M14 20l-3-1M26 20l3-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <h3>Outdoor Firepit</h3>
+        <p>Gather around the stone firepit with Adirondack seating and s'mores.</p>
+      </div>
+      <div class="amenity-card fade-in">
+        <svg class="amenity-icon" viewBox="0 0 40 40" fill="none"><rect x="6" y="16" width="28" height="14" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M10 16v-4h20v4" stroke="currentColor" stroke-width="1.5"/><circle cx="20" cy="23" r="3" stroke="currentColor" stroke-width="1.5"/></svg>
+        <h3>Gourmet Kitchen</h3>
+        <p>Full chef's kitchen with premium appliances, granite countertops, and bar seating.</p>
+      </div>
+      <div class="amenity-card fade-in">
+        <svg class="amenity-icon" viewBox="0 0 40 40" fill="none"><rect x="10" y="8" width="20" height="24" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M16 28h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M15 14l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h3>Smart Home</h3>
+        <p>Keyless entry, smart TVs in every room, and high-speed WiFi throughout.</p>
+      </div>
+      <div class="amenity-card fade-in">
+        <svg class="amenity-icon" viewBox="0 0 40 40" fill="none"><path d="M6 32l10-18 8 12 6-8 8 14" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="30" cy="12" r="4" stroke="currentColor" stroke-width="1.5"/></svg>
+        <h3>Forest Views</h3>
+        <p>Floor-to-ceiling windows surrounded by serene Pocono woodlands.</p>
+      </div>
+      <div class="amenity-card fade-in">
+        <svg class="amenity-icon" viewBox="0 0 40 40" fill="none"><path d="M14 8h12v4H14z" stroke="currentColor" stroke-width="1.5"/><path d="M16 12v16M24 12v16" stroke="currentColor" stroke-width="1.5"/><path d="M12 28h16" stroke="currentColor" stroke-width="1.5"/><path d="M18 20h4" stroke="currentColor" stroke-width="1.5"/></svg>
+        <h3>Ski Lift Swing</h3>
+        <p>A real repurposed ski lift chair turned into a one-of-a-kind backyard swing.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section id="gallery" class="gallery">
+  <div class="container">
+    <div class="gallery-header fade-in">
+      <div class="eyebrow">Gallery</div>
+      <h2 class="section-heading">See the Space</h2>
+    </div>
+    <div class="gallery-grid">
+      <div class="gallery-item tall fade-in">
+        <img src="images/great room fireplace.jpg" alt="Great room with stone fireplace" style="width:100%;height:100%;object-fit:cover">
+      </div>
+      <div class="gallery-item fade-in">
+        <img src="images/Hero firepit skilift chair.jpg" alt="Firepit area with ski lift chair swing" style="width:100%;height:100%;object-fit:cover">
+      </div>
+      <div class="gallery-item fade-in">
+        <img src="images/Hero Inside sauna.jpg" alt="Barrel sauna with forest view" style="width:100%;height:100%;object-fit:cover">
+      </div>
+      <div class="gallery-item fade-in">
+        <img src="images/RBP59013.jpg" alt="Master bedroom with rustic wood accents" style="width:100%;height:100%;object-fit:cover">
+      </div>
+      <div class="gallery-item tall fade-in">
+        <img src="images/RBP58971.jpg" alt="Loft game room with shuffleboard and bean bags" style="width:100%;height:100%;object-fit:cover">
+      </div>
+      <div class="gallery-item fade-in">
+        <img src="images/back of house.jpg" alt="Back of house with hot tub, sauna, and firepit" style="width:100%;height:100%;object-fit:cover">
+      </div>
+      <div class="gallery-item fade-in">
+        <img src="images/wooded kids room.jpg" alt="Kids room with woodland theme" style="width:100%;height:100%;object-fit:cover">
+      </div>
+      <div class="gallery-item fade-in">
+        <img src="images/smores kit.jpg" alt="S'mores station by the firepit" style="width:100%;height:100%;object-fit:cover">
+      </div>
+      <div class="gallery-item fade-in">
+        <img src="images/RBP59200.jpg" alt="Charcuterie board in the living room" style="width:100%;height:100%;object-fit:cover">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXPERIENCE / LOCATION -->
+<section id="experience" class="experience">
+  <div class="container">
+    <div class="experience-grid">
+      <div class="fade-in">
+        <div class="eyebrow">The Poconos</div>
+        <h2 class="section-heading">Adventure at Your Doorstep</h2>
+        <p class="experience-text">Nestled in the heart of the Pocono Mountains, Slanted Stone Chalet puts you within easy reach of world-class skiing, waterparks, hiking trails, and charming local towns. Whether you're here for adventure or relaxation, the Poconos deliver year-round.</p>
+      </div>
+      <div class="fade-in">
+        <ul class="attraction-list">
+          <li class="attraction-item"><span class="attraction-name">Camelback Mountain</span><span class="attraction-dist">15 min</span></li>
+          <li class="attraction-item"><span class="attraction-name">Kalahari Waterpark</span><span class="attraction-dist">20 min</span></li>
+          <li class="attraction-item"><span class="attraction-name">Pocono Raceway</span><span class="attraction-dist">25 min</span></li>
+          <li class="attraction-item"><span class="attraction-name">Delaware Water Gap</span><span class="attraction-dist">30 min</span></li>
+          <li class="attraction-item"><span class="attraction-name">Mount Airy Casino</span><span class="attraction-dist">20 min</span></li>
+          <li class="attraction-item"><span class="attraction-name">Blue Mountain Ski Area</span><span class="attraction-dist">35 min</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REVIEWS -->
+<section id="reviews" style="padding:5rem 0;background:var(--cream)">
+  <div class="container">
+    <div class="fade-in" style="text-align:center;margin-bottom:2rem">
+      <div class="eyebrow">Guest Reviews</div>
+      <h2 class="section-heading">What Our Guests Say</h2>
+    </div>
+    <script src="https://elfsightcdn.com/platform.js" async></script>
+    <div class="elfsight-app-9e2a2e9b-dfbd-4afc-87b4-bc69a037bcf1" data-elfsight-app-lazy></div>
+  </div>
+</section>
+
+<!-- BOOKING CTA -->
+<section id="booking" class="booking">
+  <div class="container">
+    <div class="booking-inner fade-in">
+      <div class="eyebrow">Book Direct</div>
+      <h2 class="section-heading">Book Direct and Save 10%</h2>
+      <p class="booking-sub">Skip the platform fees. Get the best rate when you book with us directly. Same chalet, better price, personal service.</p>
+      <div class="value-props">
+        <div class="value-prop">
+          <svg viewBox="0 0 32 32" fill="none"><path d="M16 4l3 6.1 6.7.97-4.85 4.73 1.14 6.67L16 19.27l-5.99 3.2 1.14-6.67L6.3 11.07l6.7-.97z" stroke="currentColor" stroke-width="1.5"/></svg>
+          <strong>Best Price</strong>
+          <span>Guaranteed</span>
+        </div>
+        <div class="value-prop">
+          <svg viewBox="0 0 32 32" fill="none"><path d="M16 6v20M6 16h20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="16" cy="16" r="10" stroke="currentColor" stroke-width="1.5"/></svg>
+          <strong>No Platform</strong>
+          <span>Fees</span>
+        </div>
+        <div class="value-prop">
+          <svg viewBox="0 0 32 32" fill="none"><path d="M6 24V10a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2H10l-4 4v-2z" stroke="currentColor" stroke-width="1.5"/><path d="M12 14h8M12 18h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <strong>Direct</strong>
+          <span>Communication</span>
+        </div>
+      </div>
+      <a href="https://www.bookeddirectly.com/g/pocono-pines/pocono-retreat%253A-finnish-barrel-sauna%252C-hot-tub-%2526-arcade/c72709" target="_blank" class="btn-gold-lg">Check Availability</a>
+      <p class="booking-contact">Or reach out directly: <a href="tel:+15705800942">(570) 580-0942</a> | <a href="mailto:hello@slantedstone.com">hello@slantedstone.com</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">SLANTED STONE <span>Chalet</span></div>
+        <p class="footer-tagline">A luxury mountain retreat in the Pocono Mountains. Brand new, thoughtfully designed, and waiting for you.</p>
+      </div>
+      <div>
+        <h4>Navigate</h4>
+        <ul>
+          <li><a href="#about">About</a></li>
+          <li><a href="#amenities">Amenities</a></li>
+          <li><a href="#gallery">Gallery</a></li>
+          <li><a href="#reviews">Reviews</a></li>
+          <li><a href="https://www.bookeddirectly.com/g/pocono-pines/pocono-retreat%253A-finnish-barrel-sauna%252C-hot-tub-%2526-arcade/c72709" target="_blank">Book Now</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="tel:+15705800942">(570) 580-0942</a></li>
+          <li><a href="mailto:hello@slantedstone.com">hello@slantedstone.com</a></li>
+          <li>Pocono Pines, PA</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>2026 Slanted Stone Chalet. All rights reserved.</span>
+      <span>Designed with care.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Nav scroll behavior
+const nav = document.querySelector('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 80);
+});
+
+// Hamburger menu
+const hamburger = document.querySelector('.hamburger');
+const overlay = document.querySelector('.mobile-overlay');
+hamburger.addEventListener('click', () => {
+  hamburger.classList.toggle('open');
+  overlay.classList.toggle('open');
+  document.body.style.overflow = overlay.classList.contains('open') ? 'hidden' : '';
+});
+
+// Close mobile menu on link click
+overlay.querySelectorAll('a').forEach(link => {
+  link.addEventListener('click', () => {
+    hamburger.classList.remove('open');
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+  });
+});
+
+// Smooth scroll with nav offset
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function(e) {
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      const offset = 80;
+      const top = target.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+  });
+});
+
+// Scroll animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
