@@ -29,6 +29,10 @@ a{color:inherit;text-decoration:none}
 .section-heading{font-family:var(--serif);font-size:2.6rem;font-weight:400;line-height:1.2;margin-bottom:1.5rem}
 .fade-in{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease}
 .fade-in.visible{opacity:1;transform:translateY(0)}
+.fade-in-left{opacity:0;transform:translateX(-40px);transition:opacity .7s ease,transform .7s ease}
+.fade-in-left.visible{opacity:1;transform:translateX(0)}
+.fade-in-right{opacity:0;transform:translateX(40px);transition:opacity .7s ease,transform .7s ease}
+.fade-in-right.visible{opacity:1;transform:translateX(0)}
 
 /* NAV */
 nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:1.5rem 5%;transition:background .4s,padding .4s,border .4s}
@@ -59,7 +63,8 @@ nav.scrolled .hamburger span{background:var(--ink)}
 .hero{height:100vh;min-height:700px;position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 5%;overflow:hidden}
 .hero-bg{position:absolute;inset:0;background:url('images/Hero front house.jpg') 85% 30%/120% auto no-repeat;z-index:0}
 .hero-bg::after{content:'';position:absolute;inset:0;background:rgba(28,26,23,.4)}
-.hero-content{position:relative;z-index:1;max-width:700px}
+.hero-content{position:relative;z-index:1;max-width:700px;animation:heroFadeIn 1.2s ease forwards}
+@keyframes heroFadeIn{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
 .hero-eyebrow{font-size:.7rem;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--gold2);margin-bottom:1.5rem}
 .hero h1{font-family:var(--serif);font-size:4rem;font-weight:400;color:var(--white);line-height:1.1;margin-bottom:1.2rem}
 .hero-sub{font-size:1.05rem;font-weight:300;color:rgba(253,250,245,.7);line-height:1.7;margin-bottom:2.5rem;max-width:520px;margin-left:auto;margin-right:auto}
@@ -99,7 +104,9 @@ nav.scrolled .hamburger span{background:var(--ink)}
 .gallery-header{text-align:center;margin-bottom:3.5rem}
 .gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:220px;gap:1rem}
 .gallery-item{background:var(--cream3);border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:transform .3s,box-shadow .3s;cursor:pointer}
-.gallery-item:hover{transform:scale(1.02);box-shadow:0 8px 30px rgba(28,26,23,.1)}
+.gallery-item img{transition:transform .6s ease}
+.gallery-item:hover img{transform:scale(1.08)}
+.gallery-item:hover{box-shadow:0 8px 30px rgba(28,26,23,.1)}
 .gallery-item.tall{grid-row:span 2}
 .gallery-item svg{width:36px;height:36px;opacity:.25}
 
@@ -230,19 +237,19 @@ footer ul a:hover{color:var(--gold2)}
 <section id="about" class="about">
   <div class="container">
     <div class="about-grid">
-      <div class="about-text fade-in">
+      <div class="about-text fade-in-left">
         <div class="eyebrow">The Retreat</div>
         <h2 class="section-heading">Your Mountain Escape Awaits</h2>
         <p>Slanted Stone Chalet is a brand new luxury mountain home nestled in Pocono Pines, surrounded by national parks and pristine lakes. Designed for unforgettable getaways, every detail has been thoughtfully curated to blend modern comfort with the warmth of mountain living.</p>
         <p>Spread across 2,900 square feet with four spacious bedrooms, three and a half baths, and room for up to eight guests, the chalet is perfect for family vacations, friend trips, or a peaceful retreat from the everyday.</p>
         <div class="stats">
-          <div class="stat"><span class="stat-num">4</span><span class="stat-label">Bedrooms</span></div>
-          <div class="stat"><span class="stat-num">3.5</span><span class="stat-label">Bathrooms</span></div>
-          <div class="stat"><span class="stat-num">8</span><span class="stat-label">Guests</span></div>
-          <div class="stat"><span class="stat-num">2,900</span><span class="stat-label">Sq Ft</span></div>
+          <div class="stat"><span class="stat-num counter" data-target="4">0</span><span class="stat-label">Bedrooms</span></div>
+          <div class="stat"><span class="stat-num counter" data-target="3.5" data-decimal="true">0</span><span class="stat-label">Bathrooms</span></div>
+          <div class="stat"><span class="stat-num counter" data-target="8">0</span><span class="stat-label">Guests</span></div>
+          <div class="stat"><span class="stat-num counter" data-target="2900" data-format="comma">0</span><span class="stat-label">Sq Ft</span></div>
         </div>
       </div>
-      <div class="about-img fade-in">
+      <div class="about-img fade-in-right">
         <img src="images/hero great room.jpg" alt="Great room with antler chandelier and mountain views" style="width:100%;height:100%;object-fit:cover">
       </div>
     </div>
@@ -477,16 +484,66 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   });
 });
 
-// Scroll animations
+// Parallax hero
+const heroBg = document.querySelector('.hero-bg');
+window.addEventListener('scroll', () => {
+  const scroll = window.scrollY;
+  if (scroll < window.innerHeight) {
+    heroBg.style.transform = `translateY(${scroll * 0.35}px)`;
+  }
+});
+
+// Scroll animations with stagger
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
+      // Stagger children in grids
+      const parent = entry.target.closest('.amenities-grid, .gallery-grid');
+      if (parent) {
+        const siblings = [...parent.querySelectorAll('.fade-in, .fade-in-left, .fade-in-right')];
+        const index = siblings.indexOf(entry.target);
+        entry.target.style.transitionDelay = `${index * 0.1}s`;
+      }
       entry.target.classList.add('visible');
     }
   });
 }, { threshold: 0.1 });
 
-document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+document.querySelectorAll('.fade-in, .fade-in-left, .fade-in-right').forEach(el => observer.observe(el));
+
+// Counter animation
+const counterObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const el = entry.target;
+      const target = parseFloat(el.dataset.target);
+      const isDecimal = el.dataset.decimal === 'true';
+      const hasComma = el.dataset.format === 'comma';
+      const duration = 1500;
+      const start = performance.now();
+
+      function update(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        let current = eased * target;
+
+        if (isDecimal) {
+          el.textContent = current.toFixed(1);
+        } else if (hasComma) {
+          el.textContent = Math.floor(current).toLocaleString();
+        } else {
+          el.textContent = Math.floor(current);
+        }
+
+        if (progress < 1) requestAnimationFrame(update);
+      }
+      requestAnimationFrame(update);
+      counterObserver.unobserve(el);
+    }
+  });
+}, { threshold: 0.5 });
+
+document.querySelectorAll('.counter').forEach(el => counterObserver.observe(el));
 </script>
 </body>
 </html>
