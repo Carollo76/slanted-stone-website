@@ -1,0 +1,24 @@
+---
+layout: blog-layout.html
+title: Pocono Pines Local Guide
+description: Local events, seasonal guides, and things to do near Pocono Pines, PA — by Slanted Stone Chalet.
+---
+
+<a href="/" class="back-link">← Home</a>
+
+<h2>Pocono Pines Local Guide</h2>
+<p>Discover local events, seasonal activities, and hidden gems in the Pocono Pines area.</p>
+
+<div style="display:flex;flex-direction:column;gap:2rem;margin-top:2rem">
+  {% for post in collections.blog reversed %}
+  <a href="{{ post.url }}" style="background:var(--white);padding:2rem;border-radius:4px;display:block;border-bottom:none;transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(28,26,23,.06)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+    <span style="font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)">{{ post.date | shortDate }}</span>
+    <h3 style="font-family:var(--serif);font-size:1.3rem;font-weight:400;margin:.5rem 0;color:var(--ink)">{{ post.data.title }}</h3>
+    <p style="font-size:.88rem;color:var(--muted);line-height:1.6;margin:0">{{ post.data.description }}</p>
+  </a>
+  {% endfor %}
+</div>
+
+{% if collections.blog.length == 0 %}
+<p style="color:var(--muted);margin-top:2rem;text-align:center">Coming soon — check back for our first post!</p>
+{% endif %}

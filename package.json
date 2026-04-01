@@ -1,0 +1,25 @@
+{
+  "name": "slanted-stone-website",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "npx @11ty/eleventy",
+    "start": "npx @11ty/eleventy --serve"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Carollo76/slanted-stone-website.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Carollo76/slanted-stone-website/issues"
+  },
+  "homepage": "https://github.com/Carollo76/slanted-stone-website#readme",
+  "devDependencies": {
+    "@11ty/eleventy": "^3.1.5"
+  }
+}
