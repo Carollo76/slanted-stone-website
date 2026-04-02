@@ -1,0 +1,88 @@
+name: Social Media Draft Generator
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  generate-social-draft:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'blog/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Find blog post file
+        id: find
+        run: |
+          FILE=$(git diff --name-only HEAD~1 HEAD -- 'src/blog/posts/*.md' | head -1)
+          if [ -z "$FILE" ]; then
+            echo "No blog post found in this merge"
+            exit 1
+          fi
+          echo "filepath=${FILE}" >> $GITHUB_OUTPUT
+
+      - name: Generate social media drafts
+        id: generate
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          BLOG_CONTENT=$(cat "${{ steps.find.outputs.filepath }}")
+
+          PROMPT="You are a social media manager for Slanted Stone Chalet, a luxury vacation rental in Pocono Pines, PA.
+
+          Based on the following blog post, generate TWO social media drafts:
+
+          1. INSTAGRAM caption (with relevant emojis, 3-5 hashtags, warm/inviting tone, mention 'link in bio' for the blog post, keep under 300 characters before hashtags)
+          2. FACEBOOK post (slightly longer, conversational, include a call to read the full blog post at slantedstone.com/blog/, keep under 500 characters)
+
+          The tone should be warm, local-expert, not salesy. Like a friend recommending things to do in the Poconos.
+
+          Format your response EXACTLY like this (keep the labels on their own lines):
+          INSTAGRAM:
+          [instagram caption here]
+
+          FACEBOOK:
+          [facebook post here]
+
+          Blog post content:
+          ${BLOG_CONTENT}"
+
+          RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: ${ANTHROPIC_API_KEY}" \
+            -H "anthropic-version: 2023-06-01" \
+            -d "{
+              \"model\": \"claude-sonnet-4-20250514\",
+              \"max_tokens\": 1000,
+              \"messages\": [{\"role\": \"user\", \"content\": $(echo "$PROMPT" | jq -Rs .)}]
+            }")
+
+          CONTENT=$(echo "$RESPONSE" | jq -r '.content[0].text')
+
+          if [ "$CONTENT" = "null" ] || [ -z "$CONTENT" ]; then
+            echo "Error: Failed to generate content"
+            echo "$RESPONSE"
+            exit 1
+          fi
+
+          # Save to file to preserve formatting
+          echo "$CONTENT" > /tmp/social_drafts.txt
+
+      - name: Send to Slack
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          DRAFTS=$(cat /tmp/social_drafts.txt)
+          PR_TITLE="${{ github.event.pull_request.title }}"
+
+          jq -n --arg title "$PR_TITLE" --arg drafts "$DRAFTS" '{
+            text: ("📱 Social media drafts ready!\n\n*" + $title + "*\n\n" + $drafts + "\n\n—\nCopy, tweak if needed, and post to Instagram & Facebook.")
+          }' | curl -s -X POST "$SLACK_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d @-
