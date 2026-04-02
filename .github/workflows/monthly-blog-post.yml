@@ -1,0 +1,144 @@
+name: Monthly Blog Post Generator
+
+on:
+  schedule:
+    # Runs at 9am ET on the 1st of every month
+    - cron: '0 13 1 * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  generate-blog-post:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up date variables
+        id: date
+        run: |
+          echo "year=$(date +%Y)" >> $GITHUB_OUTPUT
+          echo "month=$(date +%B)" >> $GITHUB_OUTPUT
+          echo "month_lower=$(date +%B | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+          echo "month_num=$(date +%m)" >> $GITHUB_OUTPUT
+          echo "date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+          echo "season=$(date +%m | awk '{m=$1+0; if(m>=3 && m<=5) print "Spring"; else if(m>=6 && m<=8) print "Summer"; else if(m>=9 && m<=11) print "Fall"; else print "Winter"}')" >> $GITHUB_OUTPUT
+
+      - name: Generate blog post with Claude
+        id: generate
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          SEASON="${{ steps.date.outputs.season }}"
+          MONTH="${{ steps.date.outputs.month }}"
+          YEAR="${{ steps.date.outputs.year }}"
+          DATE="${{ steps.date.outputs.date }}"
+          MONTH_LOWER="${{ steps.date.outputs.month_lower }}"
+
+          SLUG="${MONTH_LOWER}-${YEAR}-pocono-pines-guide"
+          FILEPATH="src/blog/posts/${SLUG}.md"
+
+          PROMPT="You are a blog writer for Slanted Stone Chalet, a luxury vacation rental in Pocono Pines, PA. Write a monthly local guide blog post for ${MONTH} ${YEAR} (${SEASON}).
+
+          The blog post should cover:
+          1. Local events happening this month in the Pocono Pines / Pocono Mountains area
+          2. Seasonal outdoor activities (hiking, skiing, swimming, etc. depending on season)
+          3. Local restaurant or business recommendations
+          4. Any festivals, markets, or community events
+          5. A brief mention of what makes the chalet great this time of year (tie it to the season naturally)
+
+          Nearby attractions to reference (with drive times from the chalet):
+          - Pocono Raceway (11 min)
+          - Bradys Lake (12 min)
+          - Kalahari Waterpark (14 min)
+          - Tobyhanna State Park (15 min)
+          - Camelback Mountain (20 min)
+          - Mount Airy Casino (20 min)
+          - Delaware Water Gap (30 min)
+
+          Chalet amenities: hot tub, barrel sauna, game loft with shuffleboard, stone firepit with s'mores station, ski lift chair swing, gourmet kitchen, forest views
+
+          Write in a warm, helpful, local-expert tone. Not salesy. The post should genuinely help someone planning a trip to the Poconos.
+
+          Output ONLY the markdown content (no frontmatter). Use ## for main sections and ### for subsections. Keep it 600-900 words."
+
+          RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: ${ANTHROPIC_API_KEY}" \
+            -H "anthropic-version: 2023-06-01" \
+            -d "{
+              \"model\": \"claude-sonnet-4-20250514\",
+              \"max_tokens\": 2000,
+              \"messages\": [{\"role\": \"user\", \"content\": $(echo "$PROMPT" | jq -Rs .)}]
+            }")
+
+          CONTENT=$(echo "$RESPONSE" | jq -r '.content[0].text')
+
+          if [ "$CONTENT" = "null" ] || [ -z "$CONTENT" ]; then
+            echo "Error: Failed to generate content"
+            echo "$RESPONSE"
+            exit 1
+          fi
+
+          TITLE="${MONTH} ${YEAR} in Pocono Pines: Your Local Guide to ${SEASON} in the Poconos"
+          DESCRIPTION="Your guide to ${MONTH_LOWER} in the Poconos — events, activities, dining, and seasonal highlights near Pocono Pines."
+
+          cat > "$FILEPATH" << FRONTMATTER
+          ---
+          layout: blog-layout.html
+          title: "${TITLE}"
+          description: "${DESCRIPTION}"
+          date: ${DATE}
+          tags: blog
+          ---
+
+          FRONTMATTER
+
+          # Remove leading spaces from heredoc
+          sed -i 's/^          //' "$FILEPATH"
+
+          echo "$CONTENT" >> "$FILEPATH"
+
+          echo "filepath=${FILEPATH}" >> $GITHUB_OUTPUT
+          echo "slug=${SLUG}" >> $GITHUB_OUTPUT
+          echo "title=${TITLE}" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="blog/${{ steps.generate.outputs.slug }}"
+          git config user.name "Blog Bot"
+          git config user.email "hello@slantedstone.com"
+          git checkout -b "$BRANCH"
+          git add "${{ steps.generate.outputs.filepath }}"
+          git commit -m "Draft: ${{ steps.generate.outputs.title }}"
+          git push origin "$BRANCH"
+
+          PR_URL=$(gh pr create \
+            --title "Blog Draft: ${{ steps.generate.outputs.title }}" \
+            --body "## Auto-generated blog post draft
+
+          **Review this post and merge to publish.**
+
+          - Preview the post by clicking on the changed file
+          - Edit directly on GitHub if needed
+          - Merge the PR to publish to slantedstone.com/blog/
+          - Close the PR to discard
+
+          Generated by the monthly blog automation." \
+            --base main \
+            --head "$BRANCH")
+
+          echo "pr_url=${PR_URL}" >> $GITHUB_OUTPUT
+
+      - name: Notify Slack
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          curl -s -X POST "$SLACK_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"📝 New blog draft ready for review!\n\n*${{ steps.generate.outputs.title }}*\n\nReview & approve: ${{ steps.pr.outputs.pr_url }}\n\n• Merge the PR to publish\n• Close the PR to discard\"
+            }"
