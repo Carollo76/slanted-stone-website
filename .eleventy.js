@@ -4,7 +4,6 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addPassthroughCopy("src/favicon.svg");
   eleventyConfig.addPassthroughCopy("src/apple-touch-icon.png");
   eleventyConfig.addPassthroughCopy("src/robots.txt");
-  eleventyConfig.addPassthroughCopy("src/sitemap.xml");
 
   // Date formatting filter
   eleventyConfig.addFilter("readableDate", (dateObj) => {
@@ -21,6 +20,11 @@ module.exports = function(eleventyConfig) {
       year: 'numeric',
       month: 'short'
     });
+  });
+
+  // ISO date filter (for sitemap and RSS feed)
+  eleventyConfig.addFilter("isoDate", (dateObj) => {
+    return new Date(dateObj).toISOString();
   });
 
   return {

@@ -17,6 +17,37 @@
 <meta name="theme-color" content="#1C1A17">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="alternate" type="application/atom+xml" title="Slanted Stone Chalet Blog" href="/feed.xml">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "{{ title }}",
+  "description": "{{ description }}",
+  "datePublished": "{{ date | isoDate }}",
+  "dateModified": "{{ date | isoDate }}",
+  "url": "https://slantedstone.com{{ page.url }}",
+  "image": "https://slantedstone.com/images/blog-header.jpg",
+  "author": {
+    "@type": "Organization",
+    "name": "Slanted Stone Chalet",
+    "url": "https://slantedstone.com"
+  },
+  "publisher": {
+    "@type": "LodgingBusiness",
+    "name": "Slanted Stone Chalet",
+    "url": "https://slantedstone.com",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://slantedstone.com/favicon.svg"
+    }
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://slantedstone.com{{ page.url }}"
+  }
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">

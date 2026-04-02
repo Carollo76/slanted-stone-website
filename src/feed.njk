@@ -1,0 +1,31 @@
+---
+permalink: /feed.xml
+eleventyExcludeFromCollections: true
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Slanted Stone Chalet Blog</title>
+  <subtitle>Local events, seasonal guides, and things to do near Pocono Pines, PA</subtitle>
+  <link href="https://slantedstone.com/feed.xml" rel="self" type="application/atom+xml"/>
+  <link href="https://slantedstone.com/blog/" rel="alternate" type="text/html"/>
+  <id>https://slantedstone.com/blog/</id>
+  {%- set lastPost = collections.blog | last %}
+  <updated>{% if lastPost %}{{ lastPost.date | isoDate }}{% else %}{{ page.date | isoDate }}{% endif %}</updated>
+  <author>
+    <name>Slanted Stone Chalet</name>
+    <email>hello@slantedstone.com</email>
+  </author>
+  {%- for post in collections.blog | reverse %}
+  <entry>
+    <title>{{ post.data.title }}</title>
+    <link href="https://slantedstone.com{{ post.url }}" rel="alternate" type="text/html"/>
+    <id>https://slantedstone.com{{ post.url }}</id>
+    <published>{{ post.date | isoDate }}</published>
+    <updated>{{ post.date | isoDate }}</updated>
+    <summary>{{ post.data.description }}</summary>
+    <author>
+      <name>Slanted Stone Chalet</name>
+    </author>
+  </entry>
+  {%- endfor %}
+</feed>
