@@ -118,7 +118,7 @@ jobs:
           git checkout -b "$BRANCH"
           git add "${{ steps.generate.outputs.filepath }}"
           git commit -m "Draft: ${{ steps.generate.outputs.title }}"
-          git push origin "$BRANCH"
+          git push --force origin "$BRANCH"
 
           PR_URL=$(gh pr create \
             --title "Blog Draft: ${{ steps.generate.outputs.title }}" \
