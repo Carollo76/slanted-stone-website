@@ -1,0 +1,121 @@
+name: Share Blog Post to Facebook
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/blog/posts/*.md'
+
+jobs:
+  share-to-facebook:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect new blog post
+        id: blog
+        run: |
+          # Find blog post files added in this commit
+          NEW_POST=$(git diff --name-only --diff-filter=A HEAD~1 HEAD -- 'src/blog/posts/*.md' | head -1)
+
+          if [ -z "$NEW_POST" ]; then
+            echo "No new blog post found"
+            echo "found=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "found=true" >> $GITHUB_OUTPUT
+          echo "filepath=${NEW_POST}" >> $GITHUB_OUTPUT
+
+          # Extract slug from filename (e.g. april-2026-pocono-pines-guide from april-2026-pocono-pines-guide.md)
+          FILENAME=$(basename "$NEW_POST" .md)
+          echo "slug=${FILENAME}" >> $GITHUB_OUTPUT
+
+          # Extract title from frontmatter
+          TITLE=$(sed -n 's/^title: "\(.*\)"/\1/p' "$NEW_POST" | head -1)
+          echo "title=${TITLE}" >> $GITHUB_OUTPUT
+
+          # Extract description from frontmatter
+          DESCRIPTION=$(sed -n 's/^description: "\(.*\)"/\1/p' "$NEW_POST" | head -1)
+          echo "description=${DESCRIPTION}" >> $GITHUB_OUTPUT
+
+      - name: Generate Facebook summary with Claude
+        if: steps.blog.outputs.found == 'true'
+        id: facebook
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          FILEPATH="${{ steps.blog.outputs.filepath }}"
+          BLOG_CONTENT=$(cat "$FILEPATH")
+
+          PROMPT="You are the social media voice for Slanted Stone Chalet, a vacation rental in Pocono Pines, PA.
+
+          Given this blog post, write a short Facebook post (3-5 sentences) that shares the highlights naturally. Write like a friendly local sharing tips, not a business promoting itself. Do NOT include any links or URLs. Do NOT use hashtags. Keep it conversational.
+
+          Blog post:
+          ${BLOG_CONTENT}
+
+          Output ONLY the Facebook post text, nothing else."
+
+          RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: ${ANTHROPIC_API_KEY}" \
+            -H "anthropic-version: 2023-06-01" \
+            -d "{
+              \"model\": \"claude-haiku-4-5-20251001\",
+              \"max_tokens\": 300,
+              \"messages\": [{\"role\": \"user\", \"content\": $(echo "$PROMPT" | jq -Rs .)}]
+            }")
+
+          FB_MESSAGE=$(echo "$RESPONSE" | jq -r '.content[0].text')
+
+          if [ "$FB_MESSAGE" = "null" ] || [ -z "$FB_MESSAGE" ]; then
+            echo "Error: Failed to generate Facebook post"
+            echo "$RESPONSE"
+            exit 1
+          fi
+
+          # Save to file to preserve newlines
+          echo "$FB_MESSAGE" > /tmp/fb_message.txt
+
+      - name: Share to Facebook Page
+        if: steps.blog.outputs.found == 'true'
+        env:
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+        run: |
+          MESSAGE=$(cat /tmp/fb_message.txt)
+
+          RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v25.0/${FB_PAGE_ID}/feed" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"message\": $(echo "$MESSAGE" | jq -Rs .),
+              \"access_token\": \"${FB_PAGE_ACCESS_TOKEN}\"
+            }")
+
+          echo "Facebook API response: $RESPONSE"
+
+          # Check for errors
+          if echo "$RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
+            echo "Error posting to Facebook"
+            echo "$RESPONSE" | jq '.error'
+            exit 1
+          fi
+
+          POST_ID=$(echo "$RESPONSE" | jq -r '.id')
+          echo "Successfully posted to Facebook: ${POST_ID}"
+
+      - name: Notify Slack
+        if: steps.blog.outputs.found == 'true'
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          curl -s -X POST "$SLACK_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"Blog post shared to Facebook!\n\n*${{ steps.blog.outputs.title }}*\n\nhttps://slantedstone.com/blog/posts/${{ steps.blog.outputs.slug }}/\"
+            }"
