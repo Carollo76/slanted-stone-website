@@ -1,0 +1,181 @@
+name: Share Blog Post to Instagram
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/blog/posts/*.md'
+
+jobs:
+  share-to-instagram:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect new blog post
+        id: blog
+        run: |
+          NEW_POST=$(git diff --name-only --diff-filter=A HEAD~1 HEAD -- 'src/blog/posts/*.md' | head -1)
+
+          if [ -z "$NEW_POST" ]; then
+            echo "No new blog post found"
+            echo "found=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "found=true" >> $GITHUB_OUTPUT
+          echo "filepath=${NEW_POST}" >> $GITHUB_OUTPUT
+
+          # Detect season from frontmatter date
+          MONTH=$(sed -n 's/^date: \([0-9]\{4\}\)-\([0-9]\{2\}\).*/\2/p' "$NEW_POST" | head -1)
+          MONTH_NUM=$((10#$MONTH))
+
+          if [ $MONTH_NUM -ge 3 ] && [ $MONTH_NUM -le 5 ]; then
+            SEASON="spring"
+          elif [ $MONTH_NUM -ge 6 ] && [ $MONTH_NUM -le 8 ]; then
+            SEASON="summer"
+          elif [ $MONTH_NUM -ge 9 ] && [ $MONTH_NUM -le 11 ]; then
+            SEASON="fall"
+          else
+            SEASON="winter"
+          fi
+          echo "season=${SEASON}" >> $GITHUB_OUTPUT
+
+      - name: Pick image for season
+        if: steps.blog.outputs.found == 'true'
+        id: image
+        run: |
+          SEASON="${{ steps.blog.outputs.season }}"
+
+          # Rotate through property photos based on season
+          case "$SEASON" in
+            winter)
+              IMAGE_URL="https://slantedstone.com/images/Hero%20Inside%20sauna.jpg"
+              ;;
+            spring)
+              IMAGE_URL="https://slantedstone.com/images/Hero%20front%20house.jpg"
+              ;;
+            summer)
+              IMAGE_URL="https://slantedstone.com/images/Hero%20firepit%20skilift%20chair.jpg"
+              ;;
+            fall)
+              IMAGE_URL="https://slantedstone.com/images/hero%20great%20room.jpg"
+              ;;
+          esac
+
+          echo "url=${IMAGE_URL}" >> $GITHUB_OUTPUT
+
+      - name: Generate Instagram caption with Claude
+        if: steps.blog.outputs.found == 'true'
+        id: caption
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          FILEPATH="${{ steps.blog.outputs.filepath }}"
+          BLOG_CONTENT=$(cat "$FILEPATH")
+
+          PROMPT="You are the Instagram voice for Slanted Stone Chalet, a luxury vacation rental in Pocono Pines, PA.
+
+          Given this blog post, write an Instagram caption (3-4 sentences max). Be warm, inviting, and conversational — like a friend recommending their favorite local spots. End with a simple call to action like 'Link in bio for the full guide.' or 'DM us to book your getaway.'
+
+          Do NOT use hashtags in the caption body. After the caption, add a blank line and then exactly 15 relevant hashtags on a separate line. Mix broad and niche tags like #PoconoMountains #PoconoPines #MountainGetaway #PATravel #LuxuryCabin etc.
+
+          Blog post:
+          ${BLOG_CONTENT}
+
+          Output ONLY the caption with hashtags, nothing else."
+
+          RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: ${ANTHROPIC_API_KEY}" \
+            -H "anthropic-version: 2023-06-01" \
+            -d "{
+              \"model\": \"claude-haiku-4-5-20251001\",
+              \"max_tokens\": 500,
+              \"messages\": [{\"role\": \"user\", \"content\": $(echo "$PROMPT" | jq -Rs .)}]
+            }")
+
+          CAPTION=$(echo "$RESPONSE" | jq -r '.content[0].text')
+
+          if [ "$CAPTION" = "null" ] || [ -z "$CAPTION" ]; then
+            echo "Error: Failed to generate caption"
+            echo "$RESPONSE"
+            exit 1
+          fi
+
+          echo "$CAPTION" > /tmp/ig_caption.txt
+
+      - name: Create Instagram media container
+        if: steps.blog.outputs.found == 'true'
+        id: container
+        env:
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          IG_ACCOUNT_ID: ${{ secrets.IG_ACCOUNT_ID }}
+        run: |
+          CAPTION=$(cat /tmp/ig_caption.txt)
+          IMAGE_URL="${{ steps.image.outputs.url }}"
+
+          RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v25.0/${IG_ACCOUNT_ID}/media" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"image_url\": \"${IMAGE_URL}\",
+              \"caption\": $(echo "$CAPTION" | jq -Rs .),
+              \"access_token\": \"${FB_PAGE_ACCESS_TOKEN}\"
+            }")
+
+          echo "Container response: $RESPONSE"
+
+          CONTAINER_ID=$(echo "$RESPONSE" | jq -r '.id')
+
+          if [ "$CONTAINER_ID" = "null" ] || [ -z "$CONTAINER_ID" ]; then
+            echo "Error creating media container"
+            echo "$RESPONSE" | jq '.error'
+            exit 1
+          fi
+
+          echo "container_id=${CONTAINER_ID}" >> $GITHUB_OUTPUT
+
+          # Wait for container to be ready
+          sleep 10
+
+      - name: Publish to Instagram
+        if: steps.blog.outputs.found == 'true'
+        env:
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          IG_ACCOUNT_ID: ${{ secrets.IG_ACCOUNT_ID }}
+        run: |
+          CONTAINER_ID="${{ steps.container.outputs.container_id }}"
+
+          RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v25.0/${IG_ACCOUNT_ID}/media_publish" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"creation_id\": \"${CONTAINER_ID}\",
+              \"access_token\": \"${FB_PAGE_ACCESS_TOKEN}\"
+            }")
+
+          echo "Publish response: $RESPONSE"
+
+          POST_ID=$(echo "$RESPONSE" | jq -r '.id')
+
+          if [ "$POST_ID" = "null" ] || [ -z "$POST_ID" ]; then
+            echo "Error publishing to Instagram"
+            echo "$RESPONSE" | jq '.error'
+            exit 1
+          fi
+
+          echo "Successfully published to Instagram: ${POST_ID}"
+
+      - name: Notify Slack
+        if: steps.blog.outputs.found == 'true'
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          curl -s -X POST "$SLACK_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"Blog post shared to Instagram!\n\nCheck it out: https://instagram.com/slantedstone.chalet\"
+            }"
