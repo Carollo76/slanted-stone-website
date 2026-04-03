@@ -1,0 +1,171 @@
+name: Weekly SEO Report
+
+on:
+  schedule:
+    # Every Sunday at 9am ET
+    - cron: '0 13 * * 0'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  seo-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get Google OAuth token
+        id: auth
+        run: |
+          echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > /tmp/sa.json
+
+          # Create JWT
+          NOW=$(date +%s)
+          EXP=$((NOW + 3600))
+
+          HEADER=$(echo -n '{"alg":"RS256","typ":"JWT"}' | base64 -w0 | tr '+/' '-_' | tr -d '=')
+          CLAIM=$(echo -n "{\"iss\":$(jq -r '.client_email' /tmp/sa.json | jq -Rs .),\"scope\":\"https://www.googleapis.com/auth/webmasters.readonly\",\"aud\":\"https://oauth2.googleapis.com/token\",\"iat\":${NOW},\"exp\":${EXP}}" | base64 -w0 | tr '+/' '-_' | tr -d '=')
+
+          # Sign with private key
+          PRIVATE_KEY=$(jq -r '.private_key' /tmp/sa.json)
+          SIGNATURE=$(echo -n "${HEADER}.${CLAIM}" | openssl dgst -sha256 -sign <(echo "$PRIVATE_KEY") | base64 -w0 | tr '+/' '-_' | tr -d '=')
+
+          JWT="${HEADER}.${CLAIM}.${SIGNATURE}"
+
+          # Exchange JWT for access token
+          TOKEN_RESPONSE=$(curl -s -X POST "https://oauth2.googleapis.com/token" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -d "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${JWT}")
+
+          ACCESS_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token')
+
+          if [ "$ACCESS_TOKEN" = "null" ] || [ -z "$ACCESS_TOKEN" ]; then
+            echo "Error getting access token"
+            echo "$TOKEN_RESPONSE"
+            exit 1
+          fi
+
+          echo "token=${ACCESS_TOKEN}" >> $GITHUB_OUTPUT
+          rm /tmp/sa.json
+
+      - name: Fetch Search Console data
+        id: report
+        run: |
+          TOKEN="${{ steps.auth.outputs.token }}"
+          SITE="sc-domain:slantedstone.com"
+          ENCODED_SITE=$(echo -n "$SITE" | jq -sRr @uri)
+
+          # Date range: last 7 days (with 3-day delay for data availability)
+          END_DATE=$(date -d '3 days ago' +%Y-%m-%d)
+          START_DATE=$(date -d '10 days ago' +%Y-%m-%d)
+
+          # Previous period for comparison
+          PREV_END=$(date -d '10 days ago' +%Y-%m-%d)
+          PREV_START=$(date -d '17 days ago' +%Y-%m-%d)
+
+          # Current period - top queries
+          QUERIES=$(curl -s -X POST \
+            "https://www.googleapis.com/webmasters/v3/sites/${ENCODED_SITE}/searchAnalytics/query" \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"startDate\": \"${START_DATE}\",
+              \"endDate\": \"${END_DATE}\",
+              \"dimensions\": [\"query\"],
+              \"rowLimit\": 10
+            }")
+
+          # Current period - top pages
+          PAGES=$(curl -s -X POST \
+            "https://www.googleapis.com/webmasters/v3/sites/${ENCODED_SITE}/searchAnalytics/query" \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"startDate\": \"${START_DATE}\",
+              \"endDate\": \"${END_DATE}\",
+              \"dimensions\": [\"page\"],
+              \"rowLimit\": 10
+            }")
+
+          # Current period totals
+          TOTALS=$(curl -s -X POST \
+            "https://www.googleapis.com/webmasters/v3/sites/${ENCODED_SITE}/searchAnalytics/query" \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"startDate\": \"${START_DATE}\",
+              \"endDate\": \"${END_DATE}\"
+            }")
+
+          # Previous period totals
+          PREV_TOTALS=$(curl -s -X POST \
+            "https://www.googleapis.com/webmasters/v3/sites/${ENCODED_SITE}/searchAnalytics/query" \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"startDate\": \"${PREV_START}\",
+              \"endDate\": \"${PREV_END}\"
+            }")
+
+          # Parse totals
+          CLICKS=$(echo "$TOTALS" | jq -r '.rows[0].clicks // 0')
+          IMPRESSIONS=$(echo "$TOTALS" | jq -r '.rows[0].impressions // 0')
+          CTR=$(echo "$TOTALS" | jq -r '.rows[0].ctr // 0' | awk '{printf "%.1f", $1 * 100}')
+          POSITION=$(echo "$TOTALS" | jq -r '.rows[0].position // 0' | awk '{printf "%.1f", $1}')
+
+          PREV_CLICKS=$(echo "$PREV_TOTALS" | jq -r '.rows[0].clicks // 0')
+          PREV_IMPRESSIONS=$(echo "$PREV_TOTALS" | jq -r '.rows[0].impressions // 0')
+
+          # Calculate changes
+          if [ "$PREV_CLICKS" -gt 0 ] 2>/dev/null; then
+            CLICK_CHANGE=$(awk "BEGIN {printf \"%+.0f\", (${CLICKS} - ${PREV_CLICKS})}")
+          else
+            CLICK_CHANGE="+${CLICKS}"
+          fi
+
+          if [ "$PREV_IMPRESSIONS" -gt 0 ] 2>/dev/null; then
+            IMP_CHANGE=$(awk "BEGIN {printf \"%+.0f\", (${IMPRESSIONS} - ${PREV_IMPRESSIONS})}")
+          else
+            IMP_CHANGE="+${IMPRESSIONS}"
+          fi
+
+          # Format top queries
+          TOP_QUERIES=$(echo "$QUERIES" | jq -r '.rows[:5][] | "• \(.keys[0]) — \(.clicks) clicks, \(.impressions) impressions"' 2>/dev/null || echo "• No data yet")
+
+          # Format top pages (shorten URLs)
+          TOP_PAGES=$(echo "$PAGES" | jq -r '.rows[:5][] | "• \(.keys[0] | gsub("https://slantedstone.com"; "")) — \(.clicks) clicks"' 2>/dev/null || echo "• No data yet")
+
+          # Save report
+          cat > /tmp/report.txt << REPORT
+          ${CLICKS} clicks (${CLICK_CHANGE} vs last week)
+          ${IMPRESSIONS} impressions (${IMP_CHANGE} vs last week)
+          ${CTR}% click-through rate
+          ${POSITION} avg position
+
+          Top searches:
+          ${TOP_QUERIES}
+
+          Top pages:
+          ${TOP_PAGES}
+          REPORT
+
+          # Remove leading whitespace from heredoc
+          sed -i 's/^          //' /tmp/report.txt
+
+      - name: Send Slack report
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          REPORT=$(cat /tmp/report.txt | jq -Rs .)
+
+          curl -s -X POST "$SLACK_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"blocks\": [
+                {
+                  \"type\": \"header\",
+                  \"text\": {\"type\": \"plain_text\", \"text\": \"Weekly SEO Report — slantedstone.com\"}
+                },
+                {
+                  \"type\": \"section\",
+                  \"text\": {\"type\": \"mrkdwn\", \"text\": ${REPORT}}
+                }
+              ]
+            }"
