@@ -43,9 +43,9 @@ jobs:
           DESCRIPTION=$(sed -n 's/^description: "\(.*\)"/\1/p' "$NEW_POST" | head -1)
           echo "description=${DESCRIPTION}" >> $GITHUB_OUTPUT
 
-      - name: Generate Facebook summary with Claude
+      - name: Generate social media posts with Claude
         if: steps.blog.outputs.found == 'true'
-        id: facebook
+        id: social
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
@@ -54,12 +54,16 @@ jobs:
 
           PROMPT="You are the social media voice for Slanted Stone Chalet, a vacation rental in Pocono Pines, PA.
 
-          Given this blog post, write a short Facebook post (3-5 sentences) that shares the highlights naturally. Write like a friendly local sharing tips, not a business promoting itself. Do NOT include any links or URLs. Do NOT use hashtags. Keep it conversational.
+          Given this blog post, write TWO separate social posts. Separate them with the exact marker ---SPLIT---
+
+          POST 1 (Facebook): 3-5 sentences sharing highlights naturally. Write like a friendly local sharing tips, not a business promoting itself. No links. No hashtags. Conversational.
+
+          POST 2 (Google Business Profile): 2-3 sentences, slightly more professional but still warm. Include a call to action like \"Book your Poconos getaway at slantedstone.com\". Keep it under 300 characters. No hashtags.
 
           Blog post:
           ${BLOG_CONTENT}
 
-          Output ONLY the Facebook post text, nothing else."
+          Output ONLY the two posts separated by ---SPLIT---, nothing else."
 
           RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
             -H "Content-Type: application/json" \
@@ -67,20 +71,21 @@ jobs:
             -H "anthropic-version: 2023-06-01" \
             -d "{
               \"model\": \"claude-haiku-4-5-20251001\",
-              \"max_tokens\": 300,
+              \"max_tokens\": 500,
               \"messages\": [{\"role\": \"user\", \"content\": $(echo "$PROMPT" | jq -Rs .)}]
             }")
 
-          FB_MESSAGE=$(echo "$RESPONSE" | jq -r '.content[0].text')
+          FULL_TEXT=$(echo "$RESPONSE" | jq -r '.content[0].text')
 
-          if [ "$FB_MESSAGE" = "null" ] || [ -z "$FB_MESSAGE" ]; then
-            echo "Error: Failed to generate Facebook post"
+          if [ "$FULL_TEXT" = "null" ] || [ -z "$FULL_TEXT" ]; then
+            echo "Error: Failed to generate social posts"
             echo "$RESPONSE"
             exit 1
           fi
 
-          # Save to file to preserve newlines
-          echo "$FB_MESSAGE" > /tmp/fb_message.txt
+          # Split into Facebook and GBP posts
+          echo "$FULL_TEXT" | awk '/---SPLIT---/{found=1; next} !found' > /tmp/fb_message.txt
+          echo "$FULL_TEXT" | awk '/---SPLIT---/{found=1; next} found' > /tmp/gbp_message.txt
 
       - name: Share to Facebook Page
         if: steps.blog.outputs.found == 'true'
@@ -114,8 +119,32 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
+          GBP_MESSAGE=$(cat /tmp/gbp_message.txt | jq -Rs .)
+
           curl -s -X POST "$SLACK_WEBHOOK" \
             -H "Content-Type: application/json" \
             -d "{
-              \"text\": \"Blog post shared to Facebook!\n\n*${{ steps.blog.outputs.title }}*\n\nhttps://slantedstone.com/blog/posts/${{ steps.blog.outputs.slug }}/\"
+              \"blocks\": [
+                {
+                  \"type\": \"header\",
+                  \"text\": {\"type\": \"plain_text\", \"text\": \"Blog Published + Shared to Facebook\"}
+                },
+                {
+                  \"type\": \"section\",
+                  \"text\": {\"type\": \"mrkdwn\", \"text\": \"*${{ steps.blog.outputs.title }}*\n\nhttps://slantedstone.com/blog/posts/${{ steps.blog.outputs.slug }}/\"}
+                },
+                {\"type\": \"divider\"},
+                {
+                  \"type\": \"header\",
+                  \"text\": {\"type\": \"plain_text\", \"text\": \"ACTION NEEDED: Post to Google Business Profile\"}
+                },
+                {
+                  \"type\": \"section\",
+                  \"text\": {\"type\": \"mrkdwn\", \"text\": \"Copy the text below and paste it here:\n<https://business.google.com/posts|Open Google Business Profile Posts>\"}
+                },
+                {
+                  \"type\": \"section\",
+                  \"text\": {\"type\": \"mrkdwn\", \"text\": $(echo "$GBP_MESSAGE")}
+                }
+              ]
             }"
