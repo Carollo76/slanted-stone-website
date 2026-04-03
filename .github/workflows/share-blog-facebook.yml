@@ -5,6 +5,11 @@ on:
     branches: [main]
     paths:
       - 'src/blog/posts/*.md'
+  workflow_dispatch:
+    inputs:
+      blog_post:
+        description: 'Path to blog post file (e.g. src/blog/posts/april-2026-pocono-pines-guide.md)'
+        required: false
 
 jobs:
   share-to-facebook:
@@ -19,14 +24,19 @@ jobs:
       - name: Detect new blog post
         id: blog
         run: |
-          # Find blog post files added in this commit (handles merge commits)
-          NEW_POST=$(git diff --name-only --diff-filter=A HEAD~1...HEAD -- 'src/blog/posts/*.md' 2>/dev/null | head -1)
-          # Fallback: check all parents for merge commits
-          if [ -z "$NEW_POST" ]; then
-            NEW_POST=$(git log -1 --diff-filter=A --name-only --pretty=format: -- 'src/blog/posts/*.md' | head -1)
+          # Manual trigger with specific post
+          if [ -n "${{ github.event.inputs.blog_post }}" ]; then
+            NEW_POST="${{ github.event.inputs.blog_post }}"
+          else
+            # Find blog post files added in this commit (handles merge commits)
+            NEW_POST=$(git diff --name-only --diff-filter=A HEAD~1...HEAD -- 'src/blog/posts/*.md' 2>/dev/null | head -1)
+            # Fallback: check all parents for merge commits
+            if [ -z "$NEW_POST" ]; then
+              NEW_POST=$(git log -1 --diff-filter=A --name-only --pretty=format: -- 'src/blog/posts/*.md' | head -1)
+            fi
           fi
 
-          if [ -z "$NEW_POST" ]; then
+          if [ -z "$NEW_POST" ] || [ ! -f "$NEW_POST" ]; then
             echo "No new blog post found"
             echo "found=false" >> $GITHUB_OUTPUT
             exit 0
