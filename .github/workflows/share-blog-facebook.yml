@@ -19,8 +19,12 @@ jobs:
       - name: Detect new blog post
         id: blog
         run: |
-          # Find blog post files added in this commit
-          NEW_POST=$(git diff --name-only --diff-filter=A HEAD~1 HEAD -- 'src/blog/posts/*.md' | head -1)
+          # Find blog post files added in this commit (handles merge commits)
+          NEW_POST=$(git diff --name-only --diff-filter=A HEAD~1...HEAD -- 'src/blog/posts/*.md' 2>/dev/null | head -1)
+          # Fallback: check all parents for merge commits
+          if [ -z "$NEW_POST" ]; then
+            NEW_POST=$(git log -1 --diff-filter=A --name-only --pretty=format: -- 'src/blog/posts/*.md' | head -1)
+          fi
 
           if [ -z "$NEW_POST" ]; then
             echo "No new blog post found"
