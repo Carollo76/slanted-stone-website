@@ -2,6 +2,7 @@
 layout: blog-layout.html
 title: Privacy Policy
 description: Privacy policy for Slanted Stone Chalet and slantedstone.com
+date: 2026-04-02
 ---
 
 ## Privacy Policy
