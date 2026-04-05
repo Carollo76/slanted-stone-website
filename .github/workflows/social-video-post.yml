@@ -45,10 +45,11 @@ jobs:
           YEAR="${{ steps.date.outputs.year }}"
           SEASON="${{ steps.date.outputs.season }}"
           DAY_NUM="${{ steps.date.outputs.day_of_year }}"
+          DAY_DATE="${DATE##*-}"
 
-          PROMPT="You are the social media manager for Slanted Stone Chalet, a luxury vacation rental in Pocono Pines, PA.
-
-          Today is ${DAY}, ${MONTH} ${DATE##*-}, ${YEAR}. Season: ${SEASON}.
+          # Write prompt to file to avoid shell escaping issues
+          cat > /tmp/prompt.txt << 'PROMPT_END'
+          You are the social media manager for Slanted Stone Chalet, a luxury vacation rental in Pocono Pines, PA.
 
           PROPERTY AMENITIES:
           - Finnish barrel sauna
@@ -94,7 +95,7 @@ jobs:
           22. RBP59058.jpg - Kids bunk bed room with woodland wall mural and toys
           23. RBP59274.jpg - Basket of orange and white striped pool/hot tub towels
 
-          CONTENT THEMES TO ROTATE (use day_of_year ${DAY_NUM} to vary):
+          CONTENT THEMES TO ROTATE:
           - Property feature spotlight
           - Local attraction / activity suggestion
           - Seasonal vibe / mood post
@@ -104,22 +105,33 @@ jobs:
 
           Generate a social media post plan. Output EXACTLY this JSON format, nothing else:
           {
-            \"photo\": \"exact filename from the list above\",
-            \"video_prompt\": \"A cinematic motion description for animating this photo. Be specific about camera movement and atmospheric effects. Keep under 100 words.\",
-            \"facebook_caption\": \"Facebook post caption. Warm, conversational, like a friend recommending. No hashtags. Under 300 chars.\",
-            \"instagram_caption\": \"Instagram caption with 3-5 relevant hashtags at the end. Under 400 chars.\",
-            \"gbp_caption\": \"Google Business Profile post. Professional but warm. Include call to action. Under 300 chars.\"
-          }"
+            "photo": "exact filename from the list above",
+            "video_prompt": "A cinematic motion description for animating this photo. Be specific about camera movement and atmospheric effects. Keep under 100 words.",
+            "facebook_caption": "Facebook post caption. Warm, conversational, like a friend recommending. No hashtags. Under 300 chars.",
+            "instagram_caption": "Instagram caption with 3-5 relevant hashtags at the end. Under 400 chars.",
+            "gbp_caption": "Google Business Profile post. Professional but warm. Include call to action. Under 300 chars."
+          }
+          PROMPT_END
+
+          # Prepend date context (these need variable expansion)
+          sed -i "1s|^|Today is ${DAY}, ${MONTH} ${DAY_DATE}, ${YEAR}. Season: ${SEASON}. Day of year: ${DAY_NUM}.\n\n|" /tmp/prompt.txt
+
+          # Build API request using jq to safely encode the prompt
+          PROMPT_CONTENT=$(cat /tmp/prompt.txt)
+          jq -n \
+            --arg model "claude-haiku-4-5-20251001" \
+            --arg prompt "$PROMPT_CONTENT" \
+            '{
+              model: $model,
+              max_tokens: 800,
+              messages: [{role: "user", content: $prompt}]
+            }' > /tmp/api_request.json
 
           RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
             -H "Content-Type: application/json" \
             -H "x-api-key: ${ANTHROPIC_API_KEY}" \
             -H "anthropic-version: 2023-06-01" \
-            -d "{
-              \"model\": \"claude-haiku-4-5-20251001\",
-              \"max_tokens\": 800,
-              \"messages\": [{\"role\": \"user\", \"content\": $(echo "$PROMPT" | jq -Rs .)}]
-            }")
+            -d @/tmp/api_request.json)
 
           PLAN=$(echo "$RESPONSE" | jq -r '.content[0].text')
 
