@@ -251,6 +251,7 @@ jobs:
       - name: Add ambient audio to video
         if: steps.video.outputs.video_url != ''
         run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null 2>&1
           MOOD="${{ steps.content.outputs.audio_mood }}"
           echo "Adding ${MOOD} ambient audio..."
 
