@@ -38,24 +38,34 @@ jobs:
         id: content
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          POST_DAY: ${{ steps.date.outputs.day }}
+          POST_DATE: ${{ steps.date.outputs.date }}
+          POST_MONTH: ${{ steps.date.outputs.month }}
+          POST_YEAR: ${{ steps.date.outputs.year }}
+          POST_SEASON: ${{ steps.date.outputs.season }}
+          POST_DAY_NUM: ${{ steps.date.outputs.day_of_year }}
         run: |
-          DAY="${{ steps.date.outputs.day }}"
-          DATE="${{ steps.date.outputs.date }}"
-          MONTH="${{ steps.date.outputs.month }}"
-          YEAR="${{ steps.date.outputs.year }}"
-          SEASON="${{ steps.date.outputs.season }}"
-          DAY_NUM="${{ steps.date.outputs.day_of_year }}"
-          DAY_DATE="${DATE##*-}"
+          python3 << 'PYEOF'
+          import json, os, urllib.request, urllib.error
 
-          # Write prompt to file to avoid shell escaping issues
-          cat > /tmp/prompt.txt << 'PROMPT_END'
+          day = os.environ["POST_DAY"]
+          date = os.environ["POST_DATE"]
+          month = os.environ["POST_MONTH"]
+          year = os.environ["POST_YEAR"]
+          season = os.environ["POST_SEASON"]
+          day_num = os.environ["POST_DAY_NUM"]
+          api_key = os.environ["ANTHROPIC_API_KEY"]
+          day_date = date.split("-")[-1]
+
+          prompt = f"""Today is {day}, {month} {day_date}, {year}. Season: {season}. Day of year: {day_num}.
+
           You are the social media manager for Slanted Stone Chalet, a luxury vacation rental in Pocono Pines, PA.
 
           PROPERTY AMENITIES:
           - Finnish barrel sauna
           - Hot tub
           - Game loft with shuffleboard
-          - Stone firepit with s'mores station
+          - Stone firepit with smores station
           - Ski lift chair swing
           - Gourmet kitchen
           - Forest views from every window
@@ -71,13 +81,13 @@ jobs:
           - Delaware Water Gap (30 min)
 
           AVAILABLE PHOTOS (pick one that fits your theme):
-          1. Hero front house.jpg - Front exterior of chalet in snow, cedar and stone facade
+          1. Hero front house.jpg - Front exterior of chalet, cedar and stone facade
           2. Hero Inside sauna.jpg - Interior of Finnish barrel sauna
-          3. Hero firepit skilift chair.jpg - Firepit area with orange ski lift chair swing in snow
+          3. Hero firepit skilift chair.jpg - Firepit area with orange ski lift chair swing
           4. hero great room.jpg - Great room with vaulted ceilings, stone fireplace, leather sofas
           5. great room fireplace.jpg - Stone fireplace with TV, cozy seating area
           6. shuffleboard.jpg - Shuffleboard table in the game loft
-          7. smores kit.jpg - S'mores kit ready for the firepit
+          7. smores kit.jpg - Smores kit ready for the firepit
           8. back of house.jpg - Back exterior of chalet
           9. wooded kids room.jpg - Kids bunk bed room with forest wall mural
           10. RBP58894.jpg - Chalet front exterior in winter snow, wide shot
@@ -104,57 +114,53 @@ jobs:
           - Direct booking promotion (mention code INSIDER10 for 10% off)
 
           Generate a social media post plan. Output EXACTLY this JSON format, nothing else:
-          {
+          {{
             "photo": "exact filename from the list above",
             "video_prompt": "A cinematic motion description for animating this photo. Be specific about camera movement and atmospheric effects. Keep under 100 words.",
             "facebook_caption": "Facebook post caption. Warm, conversational, like a friend recommending. No hashtags. Under 300 chars.",
             "instagram_caption": "Instagram caption with 3-5 relevant hashtags at the end. Under 400 chars.",
             "gbp_caption": "Google Business Profile post. Professional but warm. Include call to action. Under 300 chars."
-          }
-          PROMPT_END
+          }}"""
 
-          # Prepend date context (these need variable expansion)
-          sed -i "1s|^|Today is ${DAY}, ${MONTH} ${DAY_DATE}, ${YEAR}. Season: ${SEASON}. Day of year: ${DAY_NUM}.\n\n|" /tmp/prompt.txt
+          body = json.dumps({
+              "model": "claude-haiku-4-5-20251001",
+              "max_tokens": 800,
+              "messages": [{"role": "user", "content": prompt}]
+          }).encode()
 
-          # Build API request using jq to safely encode the prompt
-          jq -n \
-            --arg model "claude-haiku-4-5-20251001" \
-            --rawfile prompt /tmp/prompt.txt \
-            '{
-              model: $model,
-              max_tokens: 800,
-              messages: [{role: "user", content: $prompt}]
-            }' > /tmp/api_request.json
+          req = urllib.request.Request(
+              "https://api.anthropic.com/v1/messages",
+              data=body,
+              headers={
+                  "Content-Type": "application/json",
+                  "x-api-key": api_key,
+                  "anthropic-version": "2023-06-01"
+              }
+          )
 
-          RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
-            -H "Content-Type: application/json" \
-            -H "x-api-key: ${ANTHROPIC_API_KEY}" \
-            -H "anthropic-version: 2023-06-01" \
-            -d @/tmp/api_request.json)
+          with urllib.request.urlopen(req) as resp:
+              response = json.loads(resp.read().decode())
 
-          PLAN=$(echo "$RESPONSE" | jq -r '.content[0].text')
+          plan_text = response["content"][0]["text"]
+          print("Claude response:", plan_text)
 
-          if [ "$PLAN" = "null" ] || [ -z "$PLAN" ]; then
-            echo "Error: Failed to generate content plan"
-            echo "$RESPONSE"
-            exit 1
-          fi
+          plan = json.loads(plan_text)
 
-          echo "$PLAN" > /tmp/content_plan.json
+          with open("/tmp/fb_caption.txt", "w") as f:
+              f.write(plan["facebook_caption"])
+          with open("/tmp/ig_caption.txt", "w") as f:
+              f.write(plan["instagram_caption"])
+          with open("/tmp/gbp_caption.txt", "w") as f:
+              f.write(plan["gbp_caption"])
+          with open("/tmp/video_prompt.txt", "w") as f:
+              f.write(plan["video_prompt"])
 
-          # Extract fields
-          PHOTO=$(echo "$PLAN" | jq -r '.photo')
-          VIDEO_PROMPT=$(echo "$PLAN" | jq -r '.video_prompt')
-          FB_CAPTION=$(echo "$PLAN" | jq -r '.facebook_caption')
+          print(f"Selected photo: {plan['photo']}")
+          print(f"Video prompt: {plan['video_prompt']}")
 
-          echo "photo=${PHOTO}" >> $GITHUB_OUTPUT
-          echo "$PLAN" | jq -r '.instagram_caption' > /tmp/ig_caption.txt
-          echo "$PLAN" | jq -r '.gbp_caption' > /tmp/gbp_caption.txt
-          echo "$FB_CAPTION" > /tmp/fb_caption.txt
-          echo "$VIDEO_PROMPT" > /tmp/video_prompt.txt
-
-          echo "Selected photo: ${PHOTO}"
-          echo "Video prompt: ${VIDEO_PROMPT}"
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"photo={plan['photo']}\n")
+          PYEOF
 
       - name: Generate video with Replicate
         id: video
