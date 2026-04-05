@@ -117,10 +117,9 @@ jobs:
           sed -i "1s|^|Today is ${DAY}, ${MONTH} ${DAY_DATE}, ${YEAR}. Season: ${SEASON}. Day of year: ${DAY_NUM}.\n\n|" /tmp/prompt.txt
 
           # Build API request using jq to safely encode the prompt
-          PROMPT_CONTENT=$(cat /tmp/prompt.txt)
           jq -n \
             --arg model "claude-haiku-4-5-20251001" \
-            --arg prompt "$PROMPT_CONTENT" \
+            --rawfile prompt /tmp/prompt.txt \
             '{
               model: $model,
               max_tokens: 800,
