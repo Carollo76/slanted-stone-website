@@ -1,0 +1,276 @@
+name: Social Media Video Post
+
+on:
+  schedule:
+    # Mon, Wed, Fri at 10am ET (2pm UTC)
+    - cron: '0 14 * * 1,3,5'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  create-and-post:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set date context
+        id: date
+        run: |
+          echo "date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+          echo "day=$(date +%A)" >> $GITHUB_OUTPUT
+          echo "month=$(date +%B)" >> $GITHUB_OUTPUT
+          echo "year=$(date +%Y)" >> $GITHUB_OUTPUT
+          echo "day_of_year=$(date +%j)" >> $GITHUB_OUTPUT
+
+          MONTH_NUM=$(date +%-m)
+          if [ $MONTH_NUM -ge 3 ] && [ $MONTH_NUM -le 5 ]; then
+            echo "season=Spring" >> $GITHUB_OUTPUT
+          elif [ $MONTH_NUM -ge 6 ] && [ $MONTH_NUM -le 8 ]; then
+            echo "season=Summer" >> $GITHUB_OUTPUT
+          elif [ $MONTH_NUM -ge 9 ] && [ $MONTH_NUM -le 11 ]; then
+            echo "season=Fall" >> $GITHUB_OUTPUT
+          else
+            echo "season=Winter" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate content plan with Claude
+        id: content
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          DAY="${{ steps.date.outputs.day }}"
+          DATE="${{ steps.date.outputs.date }}"
+          MONTH="${{ steps.date.outputs.month }}"
+          YEAR="${{ steps.date.outputs.year }}"
+          SEASON="${{ steps.date.outputs.season }}"
+          DAY_NUM="${{ steps.date.outputs.day_of_year }}"
+
+          PROMPT="You are the social media manager for Slanted Stone Chalet, a luxury vacation rental in Pocono Pines, PA.
+
+          Today is ${DAY}, ${MONTH} ${DATE##*-}, ${YEAR}. Season: ${SEASON}.
+
+          PROPERTY AMENITIES:
+          - Finnish barrel sauna
+          - Hot tub
+          - Game loft with shuffleboard
+          - Stone firepit with s'mores station
+          - Ski lift chair swing
+          - Gourmet kitchen
+          - Forest views from every window
+          - Sleeps 8, 4 bedrooms
+
+          NEARBY ATTRACTIONS (with drive times):
+          - Pocono Raceway (11 min)
+          - Bradys Lake (12 min)
+          - Kalahari Waterpark (14 min)
+          - Tobyhanna State Park (15 min)
+          - Camelback Mountain (20 min)
+          - Mount Airy Casino (20 min)
+          - Delaware Water Gap (30 min)
+
+          AVAILABLE PHOTOS (pick one that fits your theme):
+          1. Hero front house.jpg - Front exterior of chalet in snow, cedar and stone facade
+          2. Hero Inside sauna.jpg - Interior of Finnish barrel sauna
+          3. Hero firepit skilift chair.jpg - Firepit area with orange ski lift chair swing in snow
+          4. hero great room.jpg - Great room with vaulted ceilings, stone fireplace, leather sofas
+          5. great room fireplace.jpg - Stone fireplace with TV, cozy seating area
+          6. shuffleboard.jpg - Shuffleboard table in the game loft
+          7. smores kit.jpg - S'mores kit ready for the firepit
+          8. back of house.jpg - Back exterior of chalet
+          9. wooded kids room.jpg - Kids bunk bed room with forest wall mural
+          10. RBP58894.jpg - Chalet front exterior in winter snow, wide shot
+          11. RBP58944.jpg - Master bedroom, neutral tones, plush bedding
+          12. RBP58909.jpg - Bedroom detail, towel fan on bed with textured pillows
+          13. RBP58966-Edit.jpg - Game loft with giant beanbag, TV, vaulted ceiling
+          14. RBP59043.jpg - Antler chandelier with snow visible through windows
+          15. RBP59133-Edit.jpg - Great room wide shot, stone column fireplace, antler chandelier, two-story windows
+          16. RBP59138-Edit.jpg - Great room from different angle, leather sofa, stone fireplace, natural light
+          17. RBP59168.jpg - Gourmet kitchen with granite island, stainless appliances, dining table set for dinner
+          18. RBP59195.jpg - Kitchen close-up, pro range with wine and cheese
+          19. RBP59200.jpg - Coffee table with Poconos book and charcuterie board, cozy living room behind
+          20. RBP59240.jpg - Wine glasses on Adirondack chairs in snow, orange ski lift swing in background
+          21. RBP59263.jpg - Sauna bucket and ladle close-up with snowy forest behind
+          22. RBP59058.jpg - Kids bunk bed room with woodland wall mural and toys
+          23. RBP59274.jpg - Basket of orange and white striped pool/hot tub towels
+
+          CONTENT THEMES TO ROTATE (use day_of_year ${DAY_NUM} to vary):
+          - Property feature spotlight
+          - Local attraction / activity suggestion
+          - Seasonal vibe / mood post
+          - Guest experience / what a stay looks like
+          - Poconos travel tip
+          - Direct booking promotion (mention code INSIDER10 for 10% off)
+
+          Generate a social media post plan. Output EXACTLY this JSON format, nothing else:
+          {
+            \"photo\": \"exact filename from the list above\",
+            \"video_prompt\": \"A cinematic motion description for animating this photo. Be specific about camera movement and atmospheric effects. Keep under 100 words.\",
+            \"facebook_caption\": \"Facebook post caption. Warm, conversational, like a friend recommending. No hashtags. Under 300 chars.\",
+            \"instagram_caption\": \"Instagram caption with 3-5 relevant hashtags at the end. Under 400 chars.\",
+            \"gbp_caption\": \"Google Business Profile post. Professional but warm. Include call to action. Under 300 chars.\"
+          }"
+
+          RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: ${ANTHROPIC_API_KEY}" \
+            -H "anthropic-version: 2023-06-01" \
+            -d "{
+              \"model\": \"claude-haiku-4-5-20251001\",
+              \"max_tokens\": 800,
+              \"messages\": [{\"role\": \"user\", \"content\": $(echo "$PROMPT" | jq -Rs .)}]
+            }")
+
+          PLAN=$(echo "$RESPONSE" | jq -r '.content[0].text')
+
+          if [ "$PLAN" = "null" ] || [ -z "$PLAN" ]; then
+            echo "Error: Failed to generate content plan"
+            echo "$RESPONSE"
+            exit 1
+          fi
+
+          echo "$PLAN" > /tmp/content_plan.json
+
+          # Extract fields
+          PHOTO=$(echo "$PLAN" | jq -r '.photo')
+          VIDEO_PROMPT=$(echo "$PLAN" | jq -r '.video_prompt')
+          FB_CAPTION=$(echo "$PLAN" | jq -r '.facebook_caption')
+
+          echo "photo=${PHOTO}" >> $GITHUB_OUTPUT
+          echo "$PLAN" | jq -r '.instagram_caption' > /tmp/ig_caption.txt
+          echo "$PLAN" | jq -r '.gbp_caption' > /tmp/gbp_caption.txt
+          echo "$FB_CAPTION" > /tmp/fb_caption.txt
+          echo "$VIDEO_PROMPT" > /tmp/video_prompt.txt
+
+          echo "Selected photo: ${PHOTO}"
+          echo "Video prompt: ${VIDEO_PROMPT}"
+
+      - name: Generate video with Replicate
+        id: video
+        env:
+          REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
+        run: |
+          PHOTO="${{ steps.content.outputs.photo }}"
+          IMAGE_URL="https://slantedstone.com/images/${PHOTO}"
+          VIDEO_PROMPT=$(cat /tmp/video_prompt.txt)
+
+          # URL-encode the image URL for spaces
+          ENCODED_IMAGE_URL=$(echo "$IMAGE_URL" | sed 's/ /%20/g')
+
+          echo "Generating video from: ${ENCODED_IMAGE_URL}"
+
+          # Create prediction using stable-video-diffusion
+          PREDICTION=$(curl -s -X POST "https://api.replicate.com/v1/predictions" \
+            -H "Authorization: Bearer ${REPLICATE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"version\": \"3f0457e4619daac51203dedb472816fd4af51f3149fa7a9e0b5ffcf1b8172438\",
+              \"input\": {
+                \"input_image\": \"${ENCODED_IMAGE_URL}\",
+                \"motion_bucket_id\": 127,
+                \"fps\": 12,
+                \"num_frames\": 25
+              }
+            }")
+
+          PREDICTION_ID=$(echo "$PREDICTION" | jq -r '.id')
+
+          if [ "$PREDICTION_ID" = "null" ] || [ -z "$PREDICTION_ID" ]; then
+            echo "Error creating prediction"
+            echo "$PREDICTION" | jq '.'
+            exit 1
+          fi
+
+          echo "Prediction ID: ${PREDICTION_ID}"
+
+          # Poll for completion (max 5 minutes)
+          for i in $(seq 1 30); do
+            sleep 10
+            STATUS_RESPONSE=$(curl -s "https://api.replicate.com/v1/predictions/${PREDICTION_ID}" \
+              -H "Authorization: Bearer ${REPLICATE_API_TOKEN}")
+
+            STATUS=$(echo "$STATUS_RESPONSE" | jq -r '.status')
+            echo "Poll ${i}: ${STATUS}"
+
+            if [ "$STATUS" = "succeeded" ]; then
+              VIDEO_URL=$(echo "$STATUS_RESPONSE" | jq -r '.output')
+              # Handle both string and array output
+              if echo "$VIDEO_URL" | jq -e 'type == "array"' > /dev/null 2>&1; then
+                VIDEO_URL=$(echo "$VIDEO_URL" | jq -r '.[0]')
+              fi
+              echo "Video URL: ${VIDEO_URL}"
+              echo "video_url=${VIDEO_URL}" >> $GITHUB_OUTPUT
+
+              # Download video for Facebook upload
+              curl -sL -o /tmp/video.mp4 "$VIDEO_URL"
+              echo "Video downloaded"
+              break
+            elif [ "$STATUS" = "failed" ] || [ "$STATUS" = "canceled" ]; then
+              echo "Prediction failed"
+              echo "$STATUS_RESPONSE" | jq '.error'
+              exit 1
+            fi
+          done
+
+          if [ -z "$VIDEO_URL" ]; then
+            echo "Timed out waiting for video generation"
+            exit 1
+          fi
+
+      - name: Post video to Facebook
+        if: steps.video.outputs.video_url != ''
+        env:
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+        run: |
+          CAPTION=$(cat /tmp/fb_caption.txt)
+          VIDEO_URL="${{ steps.video.outputs.video_url }}"
+
+          # Upload video to Facebook via URL
+          RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v25.0/${FB_PAGE_ID}/videos" \
+            -F "file_url=${VIDEO_URL}" \
+            -F "description=$(echo "$CAPTION")" \
+            -F "access_token=${FB_PAGE_ACCESS_TOKEN}")
+
+          echo "Facebook response: $RESPONSE"
+
+          if echo "$RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
+            echo "Warning: Facebook video post failed"
+            echo "$RESPONSE" | jq '.error'
+            # Don't exit 1 — still send to Slack
+          else
+            VIDEO_ID=$(echo "$RESPONSE" | jq -r '.id')
+            echo "Posted video to Facebook: ${VIDEO_ID}"
+          fi
+
+      - name: Send to Slack
+        if: steps.video.outputs.video_url != ''
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          VIDEO_URL="${{ steps.video.outputs.video_url }}"
+          IG_CAPTION=$(cat /tmp/ig_caption.txt)
+          GBP_CAPTION=$(cat /tmp/gbp_caption.txt)
+          FB_CAPTION=$(cat /tmp/fb_caption.txt)
+          PHOTO="${{ steps.content.outputs.photo }}"
+
+          jq -n \
+            --arg video "$VIDEO_URL" \
+            --arg fb "$FB_CAPTION" \
+            --arg ig "$IG_CAPTION" \
+            --arg gbp "$GBP_CAPTION" \
+            --arg photo "$PHOTO" \
+            '{
+              "blocks": [
+                {"type": "header", "text": {"type": "plain_text", "text": "Social Media Video Ready"}},
+                {"type": "section", "text": {"type": "mrkdwn", "text": ("*Photo used:* " + $photo + "\n*Video:* " + $video)}},
+                {"type": "divider"},
+                {"type": "section", "text": {"type": "mrkdwn", "text": ("*Facebook (auto-posted):*\n" + $fb)}},
+                {"type": "divider"},
+                {"type": "section", "text": {"type": "mrkdwn", "text": ("*Instagram (post manually):*\n" + $ig)}},
+                {"type": "divider"},
+                {"type": "section", "text": {"type": "mrkdwn", "text": ("*Google Business Profile (post manually):*\n" + $gbp + "\n\n<https://business.google.com/posts|Open GBP Posts>")}}
+              ]
+            }' | curl -s -X POST "$SLACK_WEBHOOK" \
+              -H "Content-Type: application/json" \
+              -d @-
