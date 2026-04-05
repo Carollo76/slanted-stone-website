@@ -343,49 +343,74 @@ jobs:
           FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
           IG_ACCOUNT_ID: ${{ secrets.IG_ACCOUNT_ID }}
         run: |
-          # Instagram API requires a public URL - use the Replicate URL (silent)
-          # Users can add Instagram music when reposting
-          VIDEO_URL="${{ steps.video.outputs.video_url }}"
           IG_CAPTION=$(cat /tmp/ig_caption.txt)
+          FILE_SIZE=$(stat -c%s /tmp/video.mp4)
 
-          # Create Reels media container
+          # Step 1: Create resumable upload container
           RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v25.0/${IG_ACCOUNT_ID}/media" \
             -H "Content-Type: application/json" \
             -d "{
               \"media_type\": \"REELS\",
-              \"video_url\": \"${VIDEO_URL}\",
+              \"upload_type\": \"resumable\",
               \"caption\": $(echo "$IG_CAPTION" | jq -Rs .),
               \"access_token\": \"${FB_PAGE_ACCESS_TOKEN}\"
             }")
 
           echo "Instagram container response: $RESPONSE"
-
           CONTAINER_ID=$(echo "$RESPONSE" | jq -r '.id')
 
           if [ "$CONTAINER_ID" = "null" ] || [ -z "$CONTAINER_ID" ]; then
             echo "Warning: Instagram container creation failed"
             echo "$RESPONSE" | jq '.error'
           else
-            # Wait for video processing
+            # Step 2: Upload video file with audio directly
+            echo "Uploading video file (${FILE_SIZE} bytes) with audio..."
+            UPLOAD_RESPONSE=$(curl -s -X POST \
+              "https://rupload.facebook.com/ig-api-upload/v25.0/${CONTAINER_ID}" \
+              -H "Authorization: OAuth ${FB_PAGE_ACCESS_TOKEN}" \
+              -H "offset: 0" \
+              -H "file_size: ${FILE_SIZE}" \
+              --data-binary "@/tmp/video.mp4")
+
+            echo "Upload response: $UPLOAD_RESPONSE"
+
+            # Step 3: Poll for processing completion (max 5 minutes)
             echo "Waiting for Instagram to process video..."
-            sleep 30
+            for i in $(seq 1 10); do
+              sleep 30
+              STATUS_RESPONSE=$(curl -s "https://graph.facebook.com/v25.0/${CONTAINER_ID}?fields=status_code&access_token=${FB_PAGE_ACCESS_TOKEN}")
+              STATUS=$(echo "$STATUS_RESPONSE" | jq -r '.status_code')
+              echo "Poll ${i}: ${STATUS}"
 
-            # Publish
-            PUB_RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v25.0/${IG_ACCOUNT_ID}/media_publish" \
-              -H "Content-Type: application/json" \
-              -d "{
-                \"creation_id\": \"${CONTAINER_ID}\",
-                \"access_token\": \"${FB_PAGE_ACCESS_TOKEN}\"
-              }")
+              if [ "$STATUS" = "FINISHED" ]; then
+                break
+              elif [ "$STATUS" = "ERROR" ]; then
+                echo "Video processing failed"
+                echo "$STATUS_RESPONSE" | jq '.'
+                break
+              fi
+            done
 
-            echo "Instagram publish response: $PUB_RESPONSE"
+            if [ "$STATUS" = "FINISHED" ]; then
+              # Step 4: Publish
+              PUB_RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v25.0/${IG_ACCOUNT_ID}/media_publish" \
+                -H "Content-Type: application/json" \
+                -d "{
+                  \"creation_id\": \"${CONTAINER_ID}\",
+                  \"access_token\": \"${FB_PAGE_ACCESS_TOKEN}\"
+                }")
 
-            if echo "$PUB_RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
-              echo "Warning: Instagram publish failed"
-              echo "$PUB_RESPONSE" | jq '.error'
+              echo "Instagram publish response: $PUB_RESPONSE"
+
+              if echo "$PUB_RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
+                echo "Warning: Instagram publish failed"
+                echo "$PUB_RESPONSE" | jq '.error'
+              else
+                POST_ID=$(echo "$PUB_RESPONSE" | jq -r '.id')
+                echo "Posted to Instagram: ${POST_ID}"
+              fi
             else
-              POST_ID=$(echo "$PUB_RESPONSE" | jq -r '.id')
-              echo "Posted to Instagram: ${POST_ID}"
+              echo "Warning: Instagram video processing did not finish in time"
             fi
           fi
 
