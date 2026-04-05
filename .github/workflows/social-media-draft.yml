@@ -76,7 +76,7 @@ jobs:
 
       - name: Send to Slack
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_SOCIAL }}
         run: |
           DRAFTS=$(cat /tmp/social_drafts.txt)
           PR_TITLE="${{ github.event.pull_request.title }}"

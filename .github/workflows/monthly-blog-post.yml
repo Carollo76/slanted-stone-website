@@ -139,7 +139,7 @@ jobs:
 
       - name: Notify Slack
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_ALERTS }}
         run: |
           curl -s -X POST "$SLACK_WEBHOOK" \
             -H "Content-Type: application/json" \

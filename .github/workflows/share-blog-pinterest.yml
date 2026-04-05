@@ -1,4 +1,4 @@
-name: Share Blog Post to Instagram
+name: Share Blog Post to Pinterest
 
 on:
   push:
@@ -12,7 +12,7 @@ on:
         required: false
 
 jobs:
-  share-to-instagram:
+  share-to-pinterest:
     runs-on: ubuntu-latest
 
     steps:
@@ -44,6 +44,14 @@ jobs:
 
           echo "found=true" >> $GITHUB_OUTPUT
           echo "filepath=${NEW_POST}" >> $GITHUB_OUTPUT
+
+          # Extract slug from filename
+          FILENAME=$(basename "$NEW_POST" .md)
+          echo "slug=${FILENAME}" >> $GITHUB_OUTPUT
+
+          # Extract title from frontmatter
+          TITLE=$(sed -n 's/^title: "\(.*\)"/\1/p' "$NEW_POST" | head -1)
+          echo "title=${TITLE}" >> $GITHUB_OUTPUT
 
           # Detect season from frontmatter date
           MONTH=$(sed -n 's/^date: \([0-9]\{4\}\)-\([0-9]\{2\}\).*/\2/p' "$NEW_POST" | head -1)
@@ -84,25 +92,29 @@ jobs:
 
           echo "url=${IMAGE_URL}" >> $GITHUB_OUTPUT
 
-      - name: Generate Instagram caption with Claude
+      - name: Generate Pinterest description with Claude
         if: steps.blog.outputs.found == 'true'
-        id: caption
+        id: pin
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           FILEPATH="${{ steps.blog.outputs.filepath }}"
           BLOG_CONTENT=$(cat "$FILEPATH")
 
-          PROMPT="You are the Instagram voice for Slanted Stone Chalet, a luxury vacation rental in Pocono Pines, PA.
+          PROMPT="You are writing a Pinterest pin description for Slanted Stone Chalet, a luxury vacation rental in Pocono Pines, PA.
 
-          Given this blog post, write an Instagram caption (3-4 sentences max). Be warm, inviting, and conversational — like a friend recommending their favorite local spots. End with a simple call to action like 'Link in bio for the full guide.' or 'DM us to book your getaway.'
+          Given this blog post, write a Pinterest pin description (2-3 sentences). Pinterest descriptions should be keyword-rich for search discovery while still sounding natural and inviting. Focus on what makes the Poconos special and hint at the experience of staying at a mountain chalet.
 
-          Do NOT use hashtags in the caption body. After the caption, add a blank line and then exactly 15 relevant hashtags on a separate line. Mix broad and niche tags like #PoconoMountains #PoconoPines #MountainGetaway #PATravel #LuxuryCabin etc.
+          End with a call to action like 'Read the full guide at slantedstone.com' or 'Plan your Pocono getaway at slantedstone.com'.
+
+          Do NOT use hashtags — Pinterest SEO works through keywords in the description, not hashtags.
+
+          Keep it under 500 characters.
 
           Blog post:
           ${BLOG_CONTENT}
 
-          Output ONLY the caption with hashtags, nothing else."
+          Output ONLY the pin description, nothing else."
 
           RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
             -H "Content-Type: application/json" \
@@ -110,87 +122,67 @@ jobs:
             -H "anthropic-version: 2023-06-01" \
             -d "{
               \"model\": \"claude-haiku-4-5-20251001\",
-              \"max_tokens\": 500,
+              \"max_tokens\": 300,
               \"messages\": [{\"role\": \"user\", \"content\": $(echo "$PROMPT" | jq -Rs .)}]
             }")
 
-          CAPTION=$(echo "$RESPONSE" | jq -r '.content[0].text')
+          DESCRIPTION=$(echo "$RESPONSE" | jq -r '.content[0].text')
 
-          if [ "$CAPTION" = "null" ] || [ -z "$CAPTION" ]; then
-            echo "Error: Failed to generate caption"
+          if [ "$DESCRIPTION" = "null" ] || [ -z "$DESCRIPTION" ]; then
+            echo "Error: Failed to generate pin description"
             echo "$RESPONSE"
             exit 1
           fi
 
-          echo "$CAPTION" > /tmp/ig_caption.txt
+          echo "$DESCRIPTION" > /tmp/pin_description.txt
 
-      - name: Create Instagram media container
+      - name: Create Pinterest pin
         if: steps.blog.outputs.found == 'true'
-        id: container
         env:
-          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
-          IG_ACCOUNT_ID: ${{ secrets.IG_ACCOUNT_ID }}
+          PINTEREST_ACCESS_TOKEN: ${{ secrets.PINTEREST_ACCESS_TOKEN }}
+          PINTEREST_BOARD_ID: ${{ secrets.PINTEREST_BOARD_ID }}
         run: |
-          CAPTION=$(cat /tmp/ig_caption.txt)
+          DESCRIPTION=$(cat /tmp/pin_description.txt)
           IMAGE_URL="${{ steps.image.outputs.url }}"
+          TITLE="${{ steps.blog.outputs.title }}"
+          SLUG="${{ steps.blog.outputs.slug }}"
+          BLOG_URL="https://slantedstone.com/blog/posts/${SLUG}/"
 
-          RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v25.0/${IG_ACCOUNT_ID}/media" \
+          RESPONSE=$(curl -s -X POST "https://api.pinterest.com/v5/pins" \
+            -H "Authorization: Bearer ${PINTEREST_ACCESS_TOKEN}" \
             -H "Content-Type: application/json" \
             -d "{
-              \"image_url\": \"${IMAGE_URL}\",
-              \"caption\": $(echo "$CAPTION" | jq -Rs .),
-              \"access_token\": \"${FB_PAGE_ACCESS_TOKEN}\"
+              \"board_id\": \"${PINTEREST_BOARD_ID}\",
+              \"title\": $(echo "$TITLE" | jq -Rs .),
+              \"description\": $(echo "$DESCRIPTION" | jq -Rs .),
+              \"link\": \"${BLOG_URL}\",
+              \"media_source\": {
+                \"source_type\": \"image_url\",
+                \"url\": \"${IMAGE_URL}\"
+              }
             }")
 
-          echo "Container response: $RESPONSE"
+          echo "Pinterest API response: $RESPONSE"
 
-          CONTAINER_ID=$(echo "$RESPONSE" | jq -r '.id')
+          PIN_ID=$(echo "$RESPONSE" | jq -r '.id')
 
-          if [ "$CONTAINER_ID" = "null" ] || [ -z "$CONTAINER_ID" ]; then
-            echo "Error creating media container"
-            echo "$RESPONSE" | jq '.error'
+          if [ "$PIN_ID" = "null" ] || [ -z "$PIN_ID" ]; then
+            echo "Error creating Pinterest pin"
+            echo "$RESPONSE" | jq '.'
             exit 1
           fi
 
-          echo "container_id=${CONTAINER_ID}" >> $GITHUB_OUTPUT
-
-          # Wait for container to be ready
-          sleep 10
-
-      - name: Publish to Instagram
-        if: steps.blog.outputs.found == 'true'
-        env:
-          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
-          IG_ACCOUNT_ID: ${{ secrets.IG_ACCOUNT_ID }}
-        run: |
-          CONTAINER_ID="${{ steps.container.outputs.container_id }}"
-
-          RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v25.0/${IG_ACCOUNT_ID}/media_publish" \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"creation_id\": \"${CONTAINER_ID}\",
-              \"access_token\": \"${FB_PAGE_ACCESS_TOKEN}\"
-            }")
-
-          echo "Publish response: $RESPONSE"
-
-          POST_ID=$(echo "$RESPONSE" | jq -r '.id')
-
-          if [ "$POST_ID" = "null" ] || [ -z "$POST_ID" ]; then
-            echo "Error publishing to Instagram"
-            echo "$RESPONSE" | jq '.error'
-            exit 1
-          fi
-
-          echo "Successfully published to Instagram: ${POST_ID}"
+          echo "Successfully created Pinterest pin: ${PIN_ID}"
 
       - name: Notify Slack
         if: steps.blog.outputs.found == 'true'
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_SOCIAL }}
         run: |
+          SLUG="${{ steps.blog.outputs.slug }}"
+
           curl -s -X POST "$SLACK_WEBHOOK" \
             -H "Content-Type: application/json" \
             -d "{
-              \"text\": \"Blog post shared to Instagram!\n\nCheck it out: https://instagram.com/slantedstone.chalet\"
+              \"text\": \"Blog post pinned to Pinterest!\n\n*${{ steps.blog.outputs.title }}*\nhttps://slantedstone.com/blog/posts/${SLUG}/\"
             }"

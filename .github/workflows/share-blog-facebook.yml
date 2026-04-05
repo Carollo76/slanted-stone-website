@@ -131,7 +131,7 @@ jobs:
       - name: Notify Slack
         if: steps.blog.outputs.found == 'true'
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_SOCIAL }}
         run: |
           GBP_MESSAGE=$(cat /tmp/gbp_message.txt | jq -Rs .)
 

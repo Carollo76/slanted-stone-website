@@ -268,7 +268,7 @@ jobs:
       - name: Send to Slack
         if: steps.video.outputs.video_url != ''
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_SOCIAL }}
         run: |
           VIDEO_URL="${{ steps.video.outputs.video_url }}"
           IG_CAPTION=$(cat /tmp/ig_caption.txt)
