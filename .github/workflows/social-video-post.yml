@@ -144,6 +144,11 @@ jobs:
           plan_text = response["content"][0]["text"]
           print("Claude response:", plan_text)
 
+          # Strip markdown code fences if present
+          import re
+          plan_text = re.sub(r'^```(?:json)?\s*', '', plan_text.strip())
+          plan_text = re.sub(r'\s*```$', '', plan_text.strip())
+
           plan = json.loads(plan_text)
 
           with open("/tmp/fb_caption.txt", "w") as f:
