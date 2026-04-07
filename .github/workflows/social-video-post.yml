@@ -53,11 +53,60 @@ jobs:
           month = os.environ["POST_MONTH"]
           year = os.environ["POST_YEAR"]
           season = os.environ["POST_SEASON"]
-          day_num = os.environ["POST_DAY_NUM"]
+          day_num = int(os.environ["POST_DAY_NUM"])
           api_key = os.environ["ANTHROPIC_API_KEY"]
           day_date = date.split("-")[-1]
 
-          prompt = f"""Today is {day}, {month} {day_date}, {year}. Season: {season}. Day of year: {day_num}.
+          # Rotate through photos and themes deterministically based on day of year
+          photos = [
+              ("Hero front house.jpg", "Front exterior of chalet, cedar and stone facade"),
+              ("Hero Inside sauna.jpg", "Interior of Finnish barrel sauna"),
+              ("Hero firepit skilift chair.jpg", "Firepit area with orange ski lift chair swing"),
+              ("hero great room.jpg", "Great room with vaulted ceilings, stone fireplace, leather sofas"),
+              ("great room fireplace.jpg", "Stone fireplace with TV, cozy seating area"),
+              ("shuffleboard.jpg", "Shuffleboard table in the game loft"),
+              ("smores kit.jpg", "Smores kit ready for the firepit"),
+              ("back of house.jpg", "Back exterior of chalet"),
+              ("wooded kids room.jpg", "Kids bunk bed room with forest wall mural"),
+              ("RBP58894.jpg", "Chalet front exterior in winter snow, wide shot"),
+              ("RBP58944.jpg", "Master bedroom, neutral tones, plush bedding"),
+              ("RBP58909.jpg", "Bedroom detail, towel fan on bed with textured pillows"),
+              ("RBP58966-Edit.jpg", "Game loft with giant beanbag, TV, vaulted ceiling"),
+              ("RBP59043.jpg", "Antler chandelier with snow visible through windows"),
+              ("RBP59133-Edit.jpg", "Great room wide shot, stone column fireplace, antler chandelier, two-story windows"),
+              ("RBP59138-Edit.jpg", "Great room from different angle, leather sofa, stone fireplace, natural light"),
+              ("RBP59168.jpg", "Gourmet kitchen with granite island, stainless appliances, dining table set for dinner"),
+              ("RBP59195.jpg", "Kitchen close-up, pro range with wine and cheese"),
+              ("RBP59200.jpg", "Coffee table with Poconos book and charcuterie board, cozy living room behind"),
+              ("RBP59240.jpg", "Wine glasses on Adirondack chairs in snow, orange ski lift swing in background"),
+              ("RBP59263.jpg", "Sauna bucket and ladle close-up with snowy forest behind"),
+              ("RBP59058.jpg", "Kids bunk bed room with woodland wall mural and toys"),
+              ("RBP59274.jpg", "Basket of orange and white striped pool/hot tub towels"),
+          ]
+
+          themes = [
+              "Property feature spotlight",
+              "Local attraction / activity suggestion",
+              "Seasonal vibe / mood post",
+              "Guest experience / what a stay looks like",
+              "Poconos travel tip",
+              "Direct booking promotion (mention code INSIDER10 for 10% off)",
+          ]
+
+          audio_moods = ["fireplace", "forest", "wind", "rain", "evening"]
+
+          photo_index = day_num % len(photos)
+          theme_index = day_num % len(themes)
+          mood_index = day_num % len(audio_moods)
+
+          assigned_photo, photo_desc = photos[photo_index]
+          assigned_theme = themes[theme_index]
+          assigned_mood = audio_moods[mood_index]
+
+          print(f"Rotation index (day {day_num}): photo={photo_index}, theme={theme_index}, mood={mood_index}")
+          print(f"Assigned: {assigned_photo} | {assigned_theme} | {assigned_mood}")
+
+          prompt = f"""Today is {day}, {month} {day_date}, {year}. Season: {season}.
 
           You are the social media manager for Slanted Stone Chalet, a luxury vacation rental in Pocono Pines, PA.
 
@@ -80,50 +129,16 @@ jobs:
           - Mount Airy Casino (20 min)
           - Delaware Water Gap (30 min)
 
-          AVAILABLE PHOTOS (pick one that fits your theme):
-          1. Hero front house.jpg - Front exterior of chalet, cedar and stone facade
-          2. Hero Inside sauna.jpg - Interior of Finnish barrel sauna
-          3. Hero firepit skilift chair.jpg - Firepit area with orange ski lift chair swing
-          4. hero great room.jpg - Great room with vaulted ceilings, stone fireplace, leather sofas
-          5. great room fireplace.jpg - Stone fireplace with TV, cozy seating area
-          6. shuffleboard.jpg - Shuffleboard table in the game loft
-          7. smores kit.jpg - Smores kit ready for the firepit
-          8. back of house.jpg - Back exterior of chalet
-          9. wooded kids room.jpg - Kids bunk bed room with forest wall mural
-          10. RBP58894.jpg - Chalet front exterior in winter snow, wide shot
-          11. RBP58944.jpg - Master bedroom, neutral tones, plush bedding
-          12. RBP58909.jpg - Bedroom detail, towel fan on bed with textured pillows
-          13. RBP58966-Edit.jpg - Game loft with giant beanbag, TV, vaulted ceiling
-          14. RBP59043.jpg - Antler chandelier with snow visible through windows
-          15. RBP59133-Edit.jpg - Great room wide shot, stone column fireplace, antler chandelier, two-story windows
-          16. RBP59138-Edit.jpg - Great room from different angle, leather sofa, stone fireplace, natural light
-          17. RBP59168.jpg - Gourmet kitchen with granite island, stainless appliances, dining table set for dinner
-          18. RBP59195.jpg - Kitchen close-up, pro range with wine and cheese
-          19. RBP59200.jpg - Coffee table with Poconos book and charcuterie board, cozy living room behind
-          20. RBP59240.jpg - Wine glasses on Adirondack chairs in snow, orange ski lift swing in background
-          21. RBP59263.jpg - Sauna bucket and ladle close-up with snowy forest behind
-          22. RBP59058.jpg - Kids bunk bed room with woodland wall mural and toys
-          23. RBP59274.jpg - Basket of orange and white striped pool/hot tub towels
+          TODAY'S ASSIGNED PHOTO: {assigned_photo} — {photo_desc}
+          TODAY'S ASSIGNED THEME: {assigned_theme}
+          TODAY'S ASSIGNED AUDIO MOOD: {assigned_mood}
 
-          CONTENT THEMES TO ROTATE:
-          - Property feature spotlight
-          - Local attraction / activity suggestion
-          - Seasonal vibe / mood post
-          - Guest experience / what a stay looks like
-          - Poconos travel tip
-          - Direct booking promotion (mention code INSIDER10 for 10% off)
-
-          AUDIO MOODS (pick one that matches the vibe):
-          - fireplace: warm crackling fire, cozy indoor
-          - forest: birds chirping, gentle breeze through trees
-          - wind: soft mountain wind, peaceful
-          - rain: gentle rain on a cabin roof
-          - evening: crickets, quiet night sounds
+          You MUST use the assigned photo, theme, and audio mood above. Do not pick different ones.
 
           Generate a social media post plan. Output EXACTLY this JSON format, nothing else:
           {{
-            "photo": "exact filename from the list above",
-            "audio_mood": "one of: fireplace, forest, wind, rain, evening",
+            "photo": "{assigned_photo}",
+            "audio_mood": "{assigned_mood}",
             "video_prompt": "A cinematic motion description for animating this photo. Be specific about camera movement and atmospheric effects. Keep under 100 words.",
             "facebook_caption": "Facebook post caption. Warm, conversational, like a friend recommending. No hashtags. Under 300 chars.",
             "instagram_caption": "Instagram caption with 3-5 relevant hashtags at the end. Under 400 chars.",
@@ -172,8 +187,8 @@ jobs:
           print(f"Video prompt: {plan['video_prompt']}")
 
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-              f.write(f"photo={plan['photo']}\n")
-              f.write(f"audio_mood={plan.get('audio_mood', 'wind')}\n")
+              f.write(f"photo={assigned_photo}\n")
+              f.write(f"audio_mood={assigned_mood}\n")
           PYEOF
 
       - name: Generate video with Replicate
