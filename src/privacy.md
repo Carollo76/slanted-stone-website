@@ -2,12 +2,12 @@
 layout: blog-layout.html
 title: Privacy Policy
 description: Privacy policy for Slanted Stone Chalet and slantedstone.com
-date: 2026-04-02
+date: 2026-04-07
 ---
 
 ## Privacy Policy
 
-**Last updated: April 2, 2026**
+**Last updated: April 7, 2026**
 
 ### Information We Collect
 
@@ -23,6 +23,12 @@ We use collected information to:
 ### Third-Party Services
 
 Our website may use third-party services such as analytics tools and social media integrations. These services have their own privacy policies governing the use of your information.
+
+### Pinterest API
+
+This website uses the Pinterest API to share content to Pinterest. This website is not endorsed by or affiliated with Pinterest, Inc.
+
+We do not store, resell, or redistribute any Pinterest content or Pinterest-derived data to third parties. If a user disconnects their Pinterest account from our application, any Pinterest-derived data associated with that user is promptly deleted and no longer retained by us.
 
 ### Cookies
 
