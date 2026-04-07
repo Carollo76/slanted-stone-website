@@ -57,31 +57,26 @@ jobs:
           api_key = os.environ["ANTHROPIC_API_KEY"]
           day_date = date.split("-")[-1]
 
-          # Rotate through photos and themes deterministically based on day of year
+          # Rotate through photos deterministically based on day of year
+          # Curated for AI video: exteriors, wide shots, natural elements animate well.
+          # Removed: close-ups with small objects (shuffleboard, smores, towels, kitchen
+          # detail, bed detail, kids room) — these warp badly with video diffusion.
           photos = [
               ("Hero front house.jpg", "Front exterior of chalet, cedar and stone facade"),
-              ("Hero Inside sauna.jpg", "Interior of Finnish barrel sauna"),
-              ("Hero firepit skilift chair.jpg", "Firepit area with orange ski lift chair swing"),
+              ("Hero Inside sauna.jpg", "Interior of Finnish barrel sauna, warm wood and steam"),
+              ("Hero firepit skilift chair.jpg", "Firepit area with orange ski lift chair swing, outdoor scene"),
               ("hero great room.jpg", "Great room with vaulted ceilings, stone fireplace, leather sofas"),
-              ("great room fireplace.jpg", "Stone fireplace with TV, cozy seating area"),
-              ("shuffleboard.jpg", "Shuffleboard table in the game loft"),
-              ("smores kit.jpg", "Smores kit ready for the firepit"),
-              ("back of house.jpg", "Back exterior of chalet"),
-              ("wooded kids room.jpg", "Kids bunk bed room with forest wall mural"),
+              ("great room fireplace.jpg", "Stone fireplace with TV, cozy seating area, warm glow"),
+              ("back of house.jpg", "Back exterior of chalet surrounded by forest"),
               ("RBP58894.jpg", "Chalet front exterior in winter snow, wide shot"),
-              ("RBP58944.jpg", "Master bedroom, neutral tones, plush bedding"),
-              ("RBP58909.jpg", "Bedroom detail, towel fan on bed with textured pillows"),
-              ("RBP58966-Edit.jpg", "Game loft with giant beanbag, TV, vaulted ceiling"),
+              ("RBP58944.jpg", "Master bedroom, neutral tones, plush bedding, soft light"),
               ("RBP59043.jpg", "Antler chandelier with snow visible through windows"),
               ("RBP59133-Edit.jpg", "Great room wide shot, stone column fireplace, antler chandelier, two-story windows"),
               ("RBP59138-Edit.jpg", "Great room from different angle, leather sofa, stone fireplace, natural light"),
-              ("RBP59168.jpg", "Gourmet kitchen with granite island, stainless appliances, dining table set for dinner"),
-              ("RBP59195.jpg", "Kitchen close-up, pro range with wine and cheese"),
+              ("RBP59168.jpg", "Gourmet kitchen wide shot with granite island, stainless appliances, dining table"),
               ("RBP59200.jpg", "Coffee table with Poconos book and charcuterie board, cozy living room behind"),
               ("RBP59240.jpg", "Wine glasses on Adirondack chairs in snow, orange ski lift swing in background"),
               ("RBP59263.jpg", "Sauna bucket and ladle close-up with snowy forest behind"),
-              ("RBP59058.jpg", "Kids bunk bed room with woodland wall mural and toys"),
-              ("RBP59274.jpg", "Basket of orange and white striped pool/hot tub towels"),
           ]
 
           themes = [
@@ -213,7 +208,7 @@ jobs:
               \"version\": \"3f0457e4619daac51203dedb472816fd4af51f3149fa7a9e0b5ffcf1b8172438\",
               \"input\": {
                 \"input_image\": \"${ENCODED_IMAGE_URL}\",
-                \"motion_bucket_id\": 127,
+                \"motion_bucket_id\": 80,
                 \"fps\": 12,
                 \"num_frames\": 25
               }
