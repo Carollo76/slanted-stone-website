@@ -1,12 +1,10 @@
 ---
 layout: blog-layout.html
 title: "April 2026 in Pocono Pines: Your Local Guide to Spring in the Poconos"
-description: "Your guide to april in the Poconos — events, activities, dining, and seasonal highlights near Pocono Pines."
+description: "Your guide to April in the Poconos — events, activities, dining, and seasonal highlights near Pocono Pines."
 date: 2026-04-03
 tags: blog
 ---
-
-# Your April 2026 Guide to Spring in the Pocono Pines
 
 Spring has officially arrived in the Pocono Mountains, and April brings that magical time when winter's grip finally loosens and the forest comes alive again. The trees are budding, wildflowers are starting to peek through the forest floor, and there's an energy in the mountain air that makes you want to get outside and explore.
 

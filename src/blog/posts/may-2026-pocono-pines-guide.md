@@ -1,12 +1,10 @@
 ---
 layout: blog-layout.html
 title: "May 2026 in Pocono Pines: Your Local Guide to Spring in the Poconos"
-description: "Your guide to may in the Poconos — events, activities, dining, and seasonal highlights near Pocono Pines."
+description: "Your guide to May in the Poconos — events, activities, dining, and seasonal highlights near Pocono Pines."
 date: 2026-05-01
 tags: blog
 ---
-
-# Your May 2026 Guide to Pocono Pines: Spring Adventures Await
 
 May in the Pocono Mountains is pure magic. The last traces of winter have melted away, wildflowers are blooming along forest trails, and that crisp mountain air carries hints of warming days ahead. Whether you're planning a romantic getaway or a family adventure, this month offers some of the best weather and activities of the year in our mountain paradise.
 

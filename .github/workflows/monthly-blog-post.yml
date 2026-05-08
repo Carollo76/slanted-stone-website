@@ -64,7 +64,7 @@ jobs:
 
           Write in a warm, helpful, local-expert tone. Not salesy. The post should genuinely help someone planning a trip to the Poconos.
 
-          Output ONLY the markdown content (no frontmatter). Use ## for main sections and ### for subsections. Keep it 600-900 words."
+          Output ONLY the markdown body content (no frontmatter, no title). Do NOT include a top-level # heading — the title is rendered separately by the layout. Start the post directly with an opening paragraph, then use ## for main sections and ### for subsections. Keep it 600-900 words."
 
           RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
             -H "Content-Type: application/json" \
@@ -85,7 +85,7 @@ jobs:
           fi
 
           TITLE="${MONTH} ${YEAR} in Pocono Pines: Your Local Guide to ${SEASON} in the Poconos"
-          DESCRIPTION="Your guide to ${MONTH_LOWER} in the Poconos — events, activities, dining, and seasonal highlights near Pocono Pines."
+          DESCRIPTION="Your guide to ${MONTH} in the Poconos — events, activities, dining, and seasonal highlights near Pocono Pines."
 
           cat > "$FILEPATH" << FRONTMATTER
           ---
