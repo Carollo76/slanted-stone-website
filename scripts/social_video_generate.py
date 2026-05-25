@@ -86,10 +86,11 @@ FORMATS = [
         "aspect_ratio": "9:16",
         "audio_mood": "evening",
         "style_hint": (
-            "Cinematic image-to-video. Slow, deliberate camera motion: a gentle "
-            "push-in or drift. Atmospheric and moody. The scene should feel like "
-            "the opening of a luxury travel ad. No people unless already present. "
-            "Subtle environmental motion (steam, smoke, leaves, snow drift)."
+            "Cinematic image-to-video. The camera barely moves: micro push-in OR "
+            "micro pull-back of 5-10%, that is it. Stay anchored to what is in "
+            "the photo. Atmospheric motion only: flame flicker, steam, snow drift, "
+            "leaves shifting, light gradient. No new scenery should appear. "
+            "Feels like the opening shot of a luxury travel ad."
         ),
     },
     {
@@ -99,11 +100,12 @@ FORMATS = [
         "aspect_ratio": "9:16",
         "audio_mood": "forest",
         "style_hint": (
-            "UGC / lifestyle image-to-video. Bring the scene to life with subtle "
-            "human presence and natural activity — a hand reaching for a wine "
-            "glass, someone walking through frame, steam rising from a hot tub, "
-            "a dog trotting past. Casual handheld feel. Make it look like a "
-            "real guest's phone video, not a static photo."
+            "UGC / lifestyle image-to-video. Locked-off or barely-moving handheld "
+            "shot. Add subtle human action WITHIN the visible frame only: a hand "
+            "appears reaching for an existing object, someone already in shot "
+            "shifts position, steam rises from a visible cup or hot tub. Do NOT "
+            "have people walk in from outside the frame. Do NOT add new rooms. "
+            "Should look like a guest filming what is already in front of them."
         ),
     },
     {
@@ -113,10 +115,11 @@ FORMATS = [
         "aspect_ratio": "9:16",
         "audio_mood": "fireplace",
         "style_hint": (
-            "Dreamy, ethereal image-to-video. Soft camera motion — slow orbit, "
-            "gentle parallax, light rack focus. Emphasise atmosphere over action: "
-            "lens flares, dust motes, soft light shifts. Should feel like a "
-            "memory or daydream. Slow, hypnotic pacing."
+            "Dreamy, ethereal image-to-video. Camera holds nearly still. Soft "
+            "atmospheric motion: lens bloom, dust motes catching light, gentle "
+            "rack focus across foreground/background elements that already exist "
+            "in the photo. No camera travel that would reveal new scenery. "
+            "Slow, hypnotic pacing — should feel like a held breath."
         ),
     },
 ]
@@ -195,13 +198,27 @@ TODAY'S VIDEO FORMAT: {format_name}
 
 You MUST follow the assigned photo, theme, and format above.
 
-Generate a social media post plan. The video_prompt MUST match the format's
-visual style guidance — describe motion, camera, atmosphere consistent with the
-style hint. Captions should feel like a human host, not a marketing bot.
+CRITICAL VIDEO PROMPT RULES (the model is image-to-video and tends to hallucinate
+new scenery when it pans). The prompt MUST:
+  - Describe motion that stays inside what is already visible in the photo.
+  - NEVER use phrases like "camera drifts toward X" or "moves toward X" where X
+    is a room, fireplace, window, object, or scene. The model invents a NEW X
+    in the direction of motion.
+  - NEVER mention rooms, doorways, hallways, or objects not visible in the photo.
+  - NEVER mention "another room", "the next room", "down the hall", etc.
+  - Use motion verbs anchored to the existing frame: "subtle push-in",
+    "slow pan left", "gentle parallax", "soft drift right", "slight zoom out".
+  - For human presence (UGC formats), describe people entering or moving
+    naturally WITHIN the visible space, never appearing from a place
+    outside the frame.
+  - Prefer atmospheric motion (light shifts, particles, steam, breeze, flame
+    flicker) over camera movement when the photo is busy.
+
+Captions should feel like a human host, not a marketing bot.
 
 Output EXACTLY this JSON, nothing else:
 {{
-  "video_prompt": "Motion description for the chosen model. Match the style hint above. Be specific about camera movement, atmosphere, and any subjects appearing. Keep under 100 words.",
+  "video_prompt": "Motion description for the chosen model. Follow the CRITICAL RULES above. Be specific about camera movement, atmosphere, and any subjects appearing — but stay within the visible frame. Keep under 100 words.",
   "facebook_caption": "Facebook caption. Warm, conversational. No hashtags. Under 300 chars.",
   "instagram_caption": "Instagram caption with 3-5 relevant hashtags at the end. Under 400 chars.",
   "gbp_caption": "Google Business Profile post. Professional but warm. Include CTA. Under 300 chars."
