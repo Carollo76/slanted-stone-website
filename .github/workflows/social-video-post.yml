@@ -4,7 +4,13 @@ on:
   schedule:
     # Mon, Wed, Fri at 10am ET (2pm UTC)
     - cron: '0 14 * * 1,3,5'
-  workflow_dispatch: # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Test mode: generate video but skip FB/IG posting (Slack still notified)'
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   create-and-post:
@@ -14,341 +20,85 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set date context
-        id: date
-        run: |
-          echo "date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
-          echo "day=$(date +%A)" >> $GITHUB_OUTPUT
-          echo "month=$(date +%B)" >> $GITHUB_OUTPUT
-          echo "year=$(date +%Y)" >> $GITHUB_OUTPUT
-          echo "day_of_year=$(date +%j)" >> $GITHUB_OUTPUT
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
-          MONTH_NUM=$(date +%-m)
-          if [ $MONTH_NUM -ge 3 ] && [ $MONTH_NUM -le 5 ]; then
-            echo "season=Spring" >> $GITHUB_OUTPUT
-          elif [ $MONTH_NUM -ge 6 ] && [ $MONTH_NUM -le 8 ]; then
-            echo "season=Summer" >> $GITHUB_OUTPUT
-          elif [ $MONTH_NUM -ge 9 ] && [ $MONTH_NUM -le 11 ]; then
-            echo "season=Fall" >> $GITHUB_OUTPUT
-          else
-            echo "season=Winter" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Generate content plan with Claude
-        id: content
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          POST_DAY: ${{ steps.date.outputs.day }}
-          POST_DATE: ${{ steps.date.outputs.date }}
-          POST_MONTH: ${{ steps.date.outputs.month }}
-          POST_YEAR: ${{ steps.date.outputs.year }}
-          POST_SEASON: ${{ steps.date.outputs.season }}
-          POST_DAY_NUM: ${{ steps.date.outputs.day_of_year }}
-        run: |
-          python3 << 'PYEOF'
-          import json, os, urllib.request, urllib.error
-
-          day = os.environ["POST_DAY"]
-          date = os.environ["POST_DATE"]
-          month = os.environ["POST_MONTH"]
-          year = os.environ["POST_YEAR"]
-          season = os.environ["POST_SEASON"]
-          day_num = int(os.environ["POST_DAY_NUM"])
-          api_key = os.environ["ANTHROPIC_API_KEY"]
-          day_date = date.split("-")[-1]
-
-          # Rotate through photos deterministically based on day of year
-          # Curated for AI video: exteriors, wide shots, natural elements animate well.
-          # Removed: close-ups with small objects (shuffleboard, smores, towels, kitchen
-          # detail, bed detail, kids room) — these warp badly with video diffusion.
-          photos = [
-              ("Hero front house.jpg", "Front exterior of chalet, cedar and stone facade"),
-              ("Hero Inside sauna.jpg", "Interior of Finnish barrel sauna, warm wood and steam"),
-              ("Hero firepit skilift chair.jpg", "Firepit area with orange ski lift chair swing, outdoor scene"),
-              ("hero great room.jpg", "Great room with vaulted ceilings, stone fireplace, leather sofas"),
-              ("great room fireplace.jpg", "Stone fireplace with TV, cozy seating area, warm glow"),
-              ("back of house.jpg", "Back exterior of chalet surrounded by forest"),
-              ("RBP58894.jpg", "Chalet front exterior in winter snow, wide shot"),
-              ("RBP58944.jpg", "Master bedroom, neutral tones, plush bedding, soft light"),
-              ("RBP59043.jpg", "Antler chandelier with snow visible through windows"),
-              ("RBP59133-Edit.jpg", "Great room wide shot, stone column fireplace, antler chandelier, two-story windows"),
-              ("RBP59138-Edit.jpg", "Great room from different angle, leather sofa, stone fireplace, natural light"),
-              ("RBP59168.jpg", "Gourmet kitchen wide shot with granite island, stainless appliances, dining table"),
-              ("RBP59200.jpg", "Coffee table with Poconos book and charcuterie board, cozy living room behind"),
-              ("RBP59240.jpg", "Wine glasses on Adirondack chairs in snow, orange ski lift swing in background"),
-              ("RBP59263.jpg", "Sauna bucket and ladle close-up with snowy forest behind"),
-          ]
-
-          themes = [
-              "Property feature spotlight",
-              "Local attraction / activity suggestion",
-              "Seasonal vibe / mood post",
-              "Guest experience / what a stay looks like",
-              "Poconos travel tip",
-              "Direct booking promotion (mention code INSIDER10 for 10% off)",
-          ]
-
-          audio_moods = ["fireplace", "forest", "wind", "rain", "evening"]
-
-          photo_index = day_num % len(photos)
-          theme_index = day_num % len(themes)
-          mood_index = day_num % len(audio_moods)
-
-          assigned_photo, photo_desc = photos[photo_index]
-          assigned_theme = themes[theme_index]
-          assigned_mood = audio_moods[mood_index]
-
-          print(f"Rotation index (day {day_num}): photo={photo_index}, theme={theme_index}, mood={mood_index}")
-          print(f"Assigned: {assigned_photo} | {assigned_theme} | {assigned_mood}")
-
-          prompt = f"""Today is {day}, {month} {day_date}, {year}. Season: {season}.
-
-          You are the social media manager for Slanted Stone Chalet, a luxury vacation rental in Pocono Pines, PA.
-
-          PROPERTY AMENITIES:
-          - Finnish barrel sauna
-          - Hot tub
-          - Game loft with shuffleboard
-          - Stone firepit with smores station
-          - Ski lift chair swing
-          - Gourmet kitchen
-          - Forest views from every window
-          - Sleeps 8, 4 bedrooms
-
-          NEARBY ATTRACTIONS (with drive times):
-          - Pocono Raceway (11 min)
-          - Bradys Lake (12 min)
-          - Kalahari Waterpark (14 min)
-          - Tobyhanna State Park (15 min)
-          - Camelback Mountain (20 min)
-          - Mount Airy Casino (20 min)
-          - Delaware Water Gap (30 min)
-
-          TODAY'S ASSIGNED PHOTO: {assigned_photo} — {photo_desc}
-          TODAY'S ASSIGNED THEME: {assigned_theme}
-          TODAY'S ASSIGNED AUDIO MOOD: {assigned_mood}
-
-          You MUST use the assigned photo, theme, and audio mood above. Do not pick different ones.
-
-          Generate a social media post plan. Output EXACTLY this JSON format, nothing else:
-          {{
-            "photo": "{assigned_photo}",
-            "audio_mood": "{assigned_mood}",
-            "video_prompt": "A cinematic motion description for animating this photo. Be specific about camera movement and atmospheric effects. Keep under 100 words.",
-            "facebook_caption": "Facebook post caption. Warm, conversational, like a friend recommending. No hashtags. Under 300 chars.",
-            "instagram_caption": "Instagram caption with 3-5 relevant hashtags at the end. Under 400 chars.",
-            "gbp_caption": "Google Business Profile post. Professional but warm. Include call to action. Under 300 chars."
-          }}"""
-
-          body = json.dumps({
-              "model": "claude-haiku-4-5-20251001",
-              "max_tokens": 800,
-              "messages": [{"role": "user", "content": prompt}]
-          }).encode()
-
-          req = urllib.request.Request(
-              "https://api.anthropic.com/v1/messages",
-              data=body,
-              headers={
-                  "Content-Type": "application/json",
-                  "x-api-key": api_key,
-                  "anthropic-version": "2023-06-01"
-              }
-          )
-
-          with urllib.request.urlopen(req) as resp:
-              response = json.loads(resp.read().decode())
-
-          plan_text = response["content"][0]["text"]
-          print("Claude response:", plan_text)
-
-          # Strip markdown code fences if present
-          import re
-          plan_text = re.sub(r'^```(?:json)?\s*', '', plan_text.strip())
-          plan_text = re.sub(r'\s*```$', '', plan_text.strip())
-
-          plan = json.loads(plan_text)
-
-          with open("/tmp/fb_caption.txt", "w") as f:
-              f.write(plan["facebook_caption"])
-          with open("/tmp/ig_caption.txt", "w") as f:
-              f.write(plan["instagram_caption"])
-          with open("/tmp/gbp_caption.txt", "w") as f:
-              f.write(plan["gbp_caption"])
-          with open("/tmp/video_prompt.txt", "w") as f:
-              f.write(plan["video_prompt"])
-
-          print(f"Selected photo: {plan['photo']}")
-          print(f"Video prompt: {plan['video_prompt']}")
-
-          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-              f.write(f"photo={assigned_photo}\n")
-              f.write(f"audio_mood={assigned_mood}\n")
-          PYEOF
-
-      - name: Generate video with Replicate
+      - name: Generate video (multi-model routing)
         id: video
         env:
           REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
-        run: |
-          PHOTO="${{ steps.content.outputs.photo }}"
-          IMAGE_URL="https://slantedstone.com/images/${PHOTO}"
-          VIDEO_PROMPT=$(cat /tmp/video_prompt.txt)
-
-          # URL-encode the image URL for spaces
-          ENCODED_IMAGE_URL=$(echo "$IMAGE_URL" | sed 's/ /%20/g')
-
-          echo "Generating video from: ${ENCODED_IMAGE_URL}"
-
-          # Create prediction using stable-video-diffusion
-          PREDICTION=$(curl -s -X POST "https://api.replicate.com/v1/predictions" \
-            -H "Authorization: Bearer ${REPLICATE_API_TOKEN}" \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"version\": \"3f0457e4619daac51203dedb472816fd4af51f3149fa7a9e0b5ffcf1b8172438\",
-              \"input\": {
-                \"input_image\": \"${ENCODED_IMAGE_URL}\",
-                \"motion_bucket_id\": 80,
-                \"fps\": 12,
-                \"num_frames\": 25
-              }
-            }")
-
-          PREDICTION_ID=$(echo "$PREDICTION" | jq -r '.id')
-
-          if [ "$PREDICTION_ID" = "null" ] || [ -z "$PREDICTION_ID" ]; then
-            echo "Error creating prediction"
-            echo "$PREDICTION" | jq '.'
-            exit 1
-          fi
-
-          echo "Prediction ID: ${PREDICTION_ID}"
-
-          # Poll for completion (max 5 minutes)
-          for i in $(seq 1 30); do
-            sleep 10
-            STATUS_RESPONSE=$(curl -s "https://api.replicate.com/v1/predictions/${PREDICTION_ID}" \
-              -H "Authorization: Bearer ${REPLICATE_API_TOKEN}")
-
-            STATUS=$(echo "$STATUS_RESPONSE" | jq -r '.status')
-            echo "Poll ${i}: ${STATUS}"
-
-            if [ "$STATUS" = "succeeded" ]; then
-              VIDEO_URL=$(echo "$STATUS_RESPONSE" | jq -r '.output')
-              # Handle both string and array output
-              if echo "$VIDEO_URL" | jq -e 'type == "array"' > /dev/null 2>&1; then
-                VIDEO_URL=$(echo "$VIDEO_URL" | jq -r '.[0]')
-              fi
-              echo "Video URL: ${VIDEO_URL}"
-              echo "video_url=${VIDEO_URL}" >> $GITHUB_OUTPUT
-
-              # Download video for Facebook upload
-              curl -sL -o /tmp/video.mp4 "$VIDEO_URL"
-              echo "Video downloaded"
-              break
-            elif [ "$STATUS" = "failed" ] || [ "$STATUS" = "canceled" ]; then
-              echo "Prediction failed"
-              echo "$STATUS_RESPONSE" | jq '.error'
-              exit 1
-            fi
-          done
-
-          if [ -z "$VIDEO_URL" ]; then
-            echo "Timed out waiting for video generation"
-            exit 1
-          fi
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python3 scripts/social_video_generate.py
 
       - name: Add ambient audio to video
         if: steps.video.outputs.video_url != ''
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null 2>&1
-          MOOD="${{ steps.content.outputs.audio_mood }}"
+          MOOD="${{ steps.video.outputs.audio_mood }}"
           echo "Adding ${MOOD} ambient audio..."
 
-          # Generate ambient audio using ffmpeg based on mood
           case "$MOOD" in
             fireplace)
-              # Brown noise + crackle effect = fireplace
               ffmpeg -f lavfi -i "anoisesrc=d=3:c=brown:r=44100:a=0.08" \
                 -af "lowpass=f=400,highpass=f=50,tremolo=f=8:d=0.4,volume=1.5" \
                 -t 3 /tmp/ambient_short.wav -y 2>/dev/null
               ;;
             forest)
-              # Pink noise filtered to sound like rustling + birds
               ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.05" \
                 -af "lowpass=f=3000,highpass=f=200,tremolo=f=2:d=0.3" \
                 -t 3 /tmp/ambient_short.wav -y 2>/dev/null
               ;;
             rain)
-              # Pink noise = rain-like
               ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.1" \
                 -af "bandpass=f=1000:w=800,volume=0.8" \
                 -t 3 /tmp/ambient_short.wav -y 2>/dev/null
               ;;
             evening)
-              # Very quiet pink noise with slow modulation
               ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.03" \
                 -af "lowpass=f=2000,highpass=f=100,tremolo=f=0.5:d=0.2" \
                 -t 3 /tmp/ambient_short.wav -y 2>/dev/null
               ;;
             *)
-              # Default: gentle wind
               ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.06" \
                 -af "lowpass=f=600,highpass=f=80" \
                 -t 3 /tmp/ambient_short.wav -y 2>/dev/null
               ;;
           esac
 
-          # Get video duration
           DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 /tmp/video.mp4 | cut -d. -f1)
           echo "Video duration: ${DURATION}s"
 
-          # Loop the ambient audio to match video length
           ffmpeg -stream_loop -1 -i /tmp/ambient_short.wav -t ${DURATION} /tmp/ambient.wav -y 2>/dev/null
-
-          # Fade in/out the audio
           ffmpeg -i /tmp/ambient.wav -af "afade=t=in:st=0:d=1,afade=t=out:st=$((DURATION-1)):d=1" /tmp/ambient_faded.wav -y 2>/dev/null
-
-          # Merge audio with video
           ffmpeg -i /tmp/video.mp4 -i /tmp/ambient_faded.wav \
             -c:v copy -c:a aac -b:a 128k -shortest \
             /tmp/video_with_audio.mp4 -y 2>/dev/null
-
-          # Replace original
           mv /tmp/video_with_audio.mp4 /tmp/video.mp4
           echo "Audio added successfully"
 
-          # Re-upload to a temporary host for Facebook/Instagram
-          # The video_url from Replicate is the silent version, so we need to use the local file
-
       - name: Post video to Facebook
-        if: steps.video.outputs.video_url != ''
+        if: steps.video.outputs.video_url != '' && inputs.test_mode != true
         env:
           FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
           FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
         run: |
           CAPTION=$(cat /tmp/fb_caption.txt)
-          VIDEO_URL="${{ steps.video.outputs.video_url }}"
-
-          # Upload video file with audio to Facebook
           RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v25.0/${FB_PAGE_ID}/videos" \
             -F "source=@/tmp/video.mp4" \
             -F "description=$(echo "$CAPTION")" \
             -F "access_token=${FB_PAGE_ACCESS_TOKEN}")
-
           echo "Facebook response: $RESPONSE"
-
           if echo "$RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
             echo "Warning: Facebook video post failed"
             echo "$RESPONSE" | jq '.error'
-            # Don't exit 1 — still send to Slack
           else
-            VIDEO_ID=$(echo "$RESPONSE" | jq -r '.id')
-            echo "Posted video to Facebook: ${VIDEO_ID}"
+            echo "Posted video to Facebook: $(echo "$RESPONSE" | jq -r '.id')"
           fi
 
       - name: Post video to Instagram as Reel
-        if: steps.video.outputs.video_url != ''
+        if: steps.video.outputs.video_url != '' && inputs.test_mode != true
         env:
           FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
           IG_ACCOUNT_ID: ${{ secrets.IG_ACCOUNT_ID }}
@@ -356,7 +106,6 @@ jobs:
           IG_CAPTION=$(cat /tmp/ig_caption.txt)
           FILE_SIZE=$(stat -c%s /tmp/video.mp4)
 
-          # Step 1: Create resumable upload container
           RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v25.0/${IG_ACCOUNT_ID}/media" \
             -H "Content-Type: application/json" \
             -d "{
@@ -365,7 +114,6 @@ jobs:
               \"caption\": $(echo "$IG_CAPTION" | jq -Rs .),
               \"access_token\": \"${FB_PAGE_ACCESS_TOKEN}\"
             }")
-
           echo "Instagram container response: $RESPONSE"
           CONTAINER_ID=$(echo "$RESPONSE" | jq -r '.id')
 
@@ -373,27 +121,22 @@ jobs:
             echo "Warning: Instagram container creation failed"
             echo "$RESPONSE" | jq '.error'
           else
-            # Step 2: Upload video file with audio directly
-            echo "Uploading video file (${FILE_SIZE} bytes) with audio..."
+            echo "Uploading video file (${FILE_SIZE} bytes)..."
             UPLOAD_RESPONSE=$(curl -s -X POST \
               "https://rupload.facebook.com/ig-api-upload/v25.0/${CONTAINER_ID}" \
               -H "Authorization: OAuth ${FB_PAGE_ACCESS_TOKEN}" \
               -H "offset: 0" \
               -H "file_size: ${FILE_SIZE}" \
               --data-binary "@/tmp/video.mp4")
-
             echo "Upload response: $UPLOAD_RESPONSE"
 
-            # Step 3: Poll for processing completion (max 5 minutes)
             echo "Waiting for Instagram to process video..."
             for i in $(seq 1 10); do
               sleep 30
               STATUS_RESPONSE=$(curl -s "https://graph.facebook.com/v25.0/${CONTAINER_ID}?fields=status_code&access_token=${FB_PAGE_ACCESS_TOKEN}")
               STATUS=$(echo "$STATUS_RESPONSE" | jq -r '.status_code')
               echo "Poll ${i}: ${STATUS}"
-
-              if [ "$STATUS" = "FINISHED" ]; then
-                break
+              if [ "$STATUS" = "FINISHED" ]; then break
               elif [ "$STATUS" = "ERROR" ]; then
                 echo "Video processing failed"
                 echo "$STATUS_RESPONSE" | jq '.'
@@ -402,22 +145,18 @@ jobs:
             done
 
             if [ "$STATUS" = "FINISHED" ]; then
-              # Step 4: Publish
               PUB_RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v25.0/${IG_ACCOUNT_ID}/media_publish" \
                 -H "Content-Type: application/json" \
                 -d "{
                   \"creation_id\": \"${CONTAINER_ID}\",
                   \"access_token\": \"${FB_PAGE_ACCESS_TOKEN}\"
                 }")
-
               echo "Instagram publish response: $PUB_RESPONSE"
-
               if echo "$PUB_RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
                 echo "Warning: Instagram publish failed"
                 echo "$PUB_RESPONSE" | jq '.error'
               else
-                POST_ID=$(echo "$PUB_RESPONSE" | jq -r '.id')
-                echo "Posted to Instagram: ${POST_ID}"
+                echo "Posted to Instagram: $(echo "$PUB_RESPONSE" | jq -r '.id')"
               fi
             else
               echo "Warning: Instagram video processing did not finish in time"
@@ -433,7 +172,9 @@ jobs:
           IG_CAPTION=$(cat /tmp/ig_caption.txt)
           GBP_CAPTION=$(cat /tmp/gbp_caption.txt)
           FB_CAPTION=$(cat /tmp/fb_caption.txt)
-          PHOTO="${{ steps.content.outputs.photo }}"
+          PHOTO="${{ steps.video.outputs.photo }}"
+          FORMAT="${{ steps.video.outputs.format }}"
+          MODEL="${{ steps.video.outputs.model }}"
 
           jq -n \
             --arg video "$VIDEO_URL" \
@@ -441,10 +182,12 @@ jobs:
             --arg ig "$IG_CAPTION" \
             --arg gbp "$GBP_CAPTION" \
             --arg photo "$PHOTO" \
+            --arg format "$FORMAT" \
+            --arg model "$MODEL" \
             '{
               "blocks": [
                 {"type": "header", "text": {"type": "plain_text", "text": "Social Media Video Ready"}},
-                {"type": "section", "text": {"type": "mrkdwn", "text": ("*Photo used:* " + $photo + "\n*Video:* " + $video)}},
+                {"type": "section", "text": {"type": "mrkdwn", "text": ("*Format:* " + $format + "\n*Model:* " + $model + "\n*Photo:* " + $photo + "\n*Video:* " + $video)}},
                 {"type": "divider"},
                 {"type": "section", "text": {"type": "mrkdwn", "text": ("*Facebook (auto-posted):*\n" + $fb)}},
                 {"type": "divider"},
