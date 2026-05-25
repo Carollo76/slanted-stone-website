@@ -2,8 +2,9 @@ name: Social Media Video Post
 
 on:
   schedule:
-    # Mon, Wed, Fri at 10am ET (2pm UTC)
-    - cron: '0 14 * * 1,3,5'
+    # Wed, Fri at 10am ET (2pm UTC). Monday is reserved for the
+    # weekend-crafted premium video posted via post-existing-video.yml.
+    - cron: '0 14 * * 3,5'
   workflow_dispatch:
     inputs:
       test_mode:

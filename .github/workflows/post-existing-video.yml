@@ -1,0 +1,153 @@
+name: Post Existing Video (Premium / Manual)
+
+# Use this workflow for the weekly premium video that you crafted with
+# Claude + Higgsfield over the weekend. Provide the rendered video URL
+# (from Higgsfield's library or any direct mp4 link) plus the three
+# captions, and this workflow posts to Facebook, Instagram Reels, and
+# sends a Slack notification (with the GBP caption ready to copy).
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_url:
+        description: 'Direct URL to the mp4 video (e.g. Higgsfield render URL)'
+        required: true
+        type: string
+      fb_caption:
+        description: 'Facebook caption (warm, no hashtags, < 300 chars)'
+        required: true
+        type: string
+      ig_caption:
+        description: 'Instagram caption (3-5 hashtags at the end, < 400 chars)'
+        required: true
+        type: string
+      gbp_caption:
+        description: 'Google Business Profile caption (you post this manually after Slack notif)'
+        required: true
+        type: string
+      label:
+        description: 'Short label / theme for the Slack message (e.g. "Talking host - hot tub")'
+        required: false
+        type: string
+        default: 'Premium weekly post'
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download video
+        run: |
+          curl -sL -o /tmp/video.mp4 "${{ inputs.video_url }}"
+          ls -lh /tmp/video.mp4
+          # Sanity check it's actually a video file
+          file /tmp/video.mp4 | grep -qiE 'mp4|mpeg|video' || { echo "Downloaded file is not a video"; exit 1; }
+
+      - name: Post video to Facebook
+        env:
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+        run: |
+          CAPTION="${{ inputs.fb_caption }}"
+          RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v25.0/${FB_PAGE_ID}/videos" \
+            -F "source=@/tmp/video.mp4" \
+            -F "description=${CAPTION}" \
+            -F "access_token=${FB_PAGE_ACCESS_TOKEN}")
+          echo "Facebook response: $RESPONSE"
+          if echo "$RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
+            echo "Warning: Facebook video post failed"
+            echo "$RESPONSE" | jq '.error'
+          else
+            echo "Posted video to Facebook: $(echo "$RESPONSE" | jq -r '.id')"
+          fi
+
+      - name: Post video to Instagram as Reel
+        env:
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          IG_ACCOUNT_ID: ${{ secrets.IG_ACCOUNT_ID }}
+        run: |
+          IG_CAPTION="${{ inputs.ig_caption }}"
+          FILE_SIZE=$(stat -c%s /tmp/video.mp4)
+
+          RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v25.0/${IG_ACCOUNT_ID}/media" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"media_type\": \"REELS\",
+              \"upload_type\": \"resumable\",
+              \"caption\": $(echo "$IG_CAPTION" | jq -Rs .),
+              \"access_token\": \"${FB_PAGE_ACCESS_TOKEN}\"
+            }")
+          echo "Instagram container response: $RESPONSE"
+          CONTAINER_ID=$(echo "$RESPONSE" | jq -r '.id')
+
+          if [ "$CONTAINER_ID" = "null" ] || [ -z "$CONTAINER_ID" ]; then
+            echo "Warning: Instagram container creation failed"
+            echo "$RESPONSE" | jq '.error'
+            exit 0
+          fi
+
+          echo "Uploading video file (${FILE_SIZE} bytes)..."
+          UPLOAD_RESPONSE=$(curl -s -X POST \
+            "https://rupload.facebook.com/ig-api-upload/v25.0/${CONTAINER_ID}" \
+            -H "Authorization: OAuth ${FB_PAGE_ACCESS_TOKEN}" \
+            -H "offset: 0" \
+            -H "file_size: ${FILE_SIZE}" \
+            --data-binary "@/tmp/video.mp4")
+          echo "Upload response: $UPLOAD_RESPONSE"
+
+          echo "Waiting for Instagram to process video..."
+          for i in $(seq 1 10); do
+            sleep 30
+            STATUS_RESPONSE=$(curl -s "https://graph.facebook.com/v25.0/${CONTAINER_ID}?fields=status_code&access_token=${FB_PAGE_ACCESS_TOKEN}")
+            STATUS=$(echo "$STATUS_RESPONSE" | jq -r '.status_code')
+            echo "Poll ${i}: ${STATUS}"
+            if [ "$STATUS" = "FINISHED" ]; then break
+            elif [ "$STATUS" = "ERROR" ]; then
+              echo "Video processing failed"
+              echo "$STATUS_RESPONSE" | jq '.'
+              break
+            fi
+          done
+
+          if [ "$STATUS" = "FINISHED" ]; then
+            PUB_RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v25.0/${IG_ACCOUNT_ID}/media_publish" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"creation_id\": \"${CONTAINER_ID}\",
+                \"access_token\": \"${FB_PAGE_ACCESS_TOKEN}\"
+              }")
+            echo "Instagram publish response: $PUB_RESPONSE"
+            if echo "$PUB_RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
+              echo "Warning: Instagram publish failed"
+              echo "$PUB_RESPONSE" | jq '.error'
+            else
+              echo "Posted to Instagram: $(echo "$PUB_RESPONSE" | jq -r '.id')"
+            fi
+          else
+            echo "Warning: Instagram video processing did not finish in time"
+          fi
+
+      - name: Send to Slack
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_SOCIAL }}
+        run: |
+          jq -n \
+            --arg video "${{ inputs.video_url }}" \
+            --arg fb "${{ inputs.fb_caption }}" \
+            --arg ig "${{ inputs.ig_caption }}" \
+            --arg gbp "${{ inputs.gbp_caption }}" \
+            --arg label "${{ inputs.label }}" \
+            '{
+              "blocks": [
+                {"type": "header", "text": {"type": "plain_text", "text": "Premium Video Posted"}},
+                {"type": "section", "text": {"type": "mrkdwn", "text": ("*Label:* " + $label + "\n*Video:* " + $video)}},
+                {"type": "divider"},
+                {"type": "section", "text": {"type": "mrkdwn", "text": ("*Facebook (auto-posted):*\n" + $fb)}},
+                {"type": "divider"},
+                {"type": "section", "text": {"type": "mrkdwn", "text": ("*Instagram (auto-posted as Reel):*\n" + $ig)}},
+                {"type": "divider"},
+                {"type": "section", "text": {"type": "mrkdwn", "text": ("*Google Business Profile (post manually):*\n" + $gbp + "\n\n<https://business.google.com/posts|Open GBP Posts>")}}
+              ]
+            }' | curl -s -X POST "$SLACK_WEBHOOK" \
+              -H "Content-Type: application/json" \
+              -d @-
