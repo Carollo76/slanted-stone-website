@@ -43,45 +43,58 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python3 scripts/social_video_generate.py
 
-      - name: Add ambient audio to video
+      - name: Add audio to video
         if: steps.video.outputs.video_url != ''
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null 2>&1
           MOOD="${{ steps.video.outputs.audio_mood }}"
-          echo "Adding ${MOOD} ambient audio..."
-
-          case "$MOOD" in
-            fireplace)
-              ffmpeg -f lavfi -i "anoisesrc=d=3:c=brown:r=44100:a=0.08" \
-                -af "lowpass=f=400,highpass=f=50,tremolo=f=8:d=0.4,volume=1.5" \
-                -t 3 /tmp/ambient_short.wav -y 2>/dev/null
-              ;;
-            forest)
-              ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.05" \
-                -af "lowpass=f=3000,highpass=f=200,tremolo=f=2:d=0.3" \
-                -t 3 /tmp/ambient_short.wav -y 2>/dev/null
-              ;;
-            rain)
-              ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.1" \
-                -af "bandpass=f=1000:w=800,volume=0.8" \
-                -t 3 /tmp/ambient_short.wav -y 2>/dev/null
-              ;;
-            evening)
-              ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.03" \
-                -af "lowpass=f=2000,highpass=f=100,tremolo=f=0.5:d=0.2" \
-                -t 3 /tmp/ambient_short.wav -y 2>/dev/null
-              ;;
-            *)
-              ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.06" \
-                -af "lowpass=f=600,highpass=f=80" \
-                -t 3 /tmp/ambient_short.wav -y 2>/dev/null
-              ;;
-          esac
-
+          TRACK="${{ steps.video.outputs.audio_track }}"
           DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 /tmp/video.mp4 | cut -d. -f1)
           echo "Video duration: ${DURATION}s"
 
-          ffmpeg -stream_loop -1 -i /tmp/ambient_short.wav -t ${DURATION} /tmp/ambient.wav -y 2>/dev/null
+          if [ -n "$TRACK" ] && [ -f "$TRACK" ]; then
+            # Real music track from audio/<mood>/. Loop to video duration
+            # (no-op if track is longer than the video), attenuate to ~60%
+            # so it doesn't drown the future voiceover work.
+            echo "Using audio track: $TRACK"
+            ffmpeg -stream_loop -1 -i "$TRACK" -t ${DURATION} -af "volume=0.6" \
+              -ar 44100 -ac 2 /tmp/ambient.wav -y 2>/dev/null
+          else
+            # Fallback: defanged synth ambient (the original synth had an
+            # 8 Hz tremolo on the fireplace mood that sounded like a steam
+            # locomotive). These recipes have NO aggressive tremolo.
+            echo "No track in audio/${MOOD}/ or audio/ambient/ — using synth fallback for ${MOOD}"
+            case "$MOOD" in
+              fireplace)
+                ffmpeg -f lavfi -i "anoisesrc=d=3:c=brown:r=44100:a=0.06" \
+                  -af "lowpass=f=350,highpass=f=40,volume=1.1" \
+                  -t 3 /tmp/ambient_short.wav -y 2>/dev/null
+                ;;
+              forest)
+                ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.04" \
+                  -af "lowpass=f=3000,highpass=f=200" \
+                  -t 3 /tmp/ambient_short.wav -y 2>/dev/null
+                ;;
+              rain)
+                ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.08" \
+                  -af "bandpass=f=1000:w=800,volume=0.8" \
+                  -t 3 /tmp/ambient_short.wav -y 2>/dev/null
+                ;;
+              evening)
+                ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.03" \
+                  -af "lowpass=f=2000,highpass=f=100" \
+                  -t 3 /tmp/ambient_short.wav -y 2>/dev/null
+                ;;
+              *)
+                ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.05" \
+                  -af "lowpass=f=600,highpass=f=80" \
+                  -t 3 /tmp/ambient_short.wav -y 2>/dev/null
+                ;;
+            esac
+            ffmpeg -stream_loop -1 -i /tmp/ambient_short.wav -t ${DURATION} /tmp/ambient.wav -y 2>/dev/null
+          fi
+
+          # Fade in/out the last 1s, then mux onto the video.
           ffmpeg -i /tmp/ambient.wav -af "afade=t=in:st=0:d=1,afade=t=out:st=$((DURATION-1)):d=1" /tmp/ambient_faded.wav -y 2>/dev/null
           ffmpeg -i /tmp/video.mp4 -i /tmp/ambient_faded.wav \
             -c:v copy -c:a aac -b:a 128k -shortest \

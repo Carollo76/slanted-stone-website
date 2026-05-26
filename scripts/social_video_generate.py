@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import json
 import os
+import random
 import re
 import sys
 import time
@@ -39,6 +40,10 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+AUDIO_ROOT = REPO_ROOT / "audio"
+AUDIO_EXTS = {".mp3", ".m4a", ".wav", ".aac", ".ogg"}
 
 # --------------------------------------------------------------------------- #
 # Photos — curated for AI video. Each has a description Claude can read.
@@ -358,6 +363,28 @@ def build_input_for(format_def: dict, image_url: str, video_prompt: str) -> dict
     raise ValueError(f"No input adapter for model {model}")
 
 # --------------------------------------------------------------------------- #
+# Audio track picker
+# --------------------------------------------------------------------------- #
+
+def pick_audio_track(mood: str) -> str | None:
+    """Return a repo-relative path to a random audio file for the given mood.
+
+    Looks in audio/<mood>/, then falls back to audio/ambient/. Returns None
+    if neither folder has a usable track — the workflow then uses a tamed
+    synth fallback so we never broadcast silence (or a steam locomotive).
+    """
+    for candidate in (mood, "ambient"):
+        folder = AUDIO_ROOT / candidate
+        if not folder.is_dir():
+            continue
+        tracks = sorted(p for p in folder.iterdir() if p.suffix.lower() in AUDIO_EXTS and not p.name.startswith("."))
+        if tracks:
+            chosen = random.choice(tracks)
+            return str(chosen.relative_to(REPO_ROOT))
+    return None
+
+
+# --------------------------------------------------------------------------- #
 # Main
 # --------------------------------------------------------------------------- #
 
@@ -401,12 +428,19 @@ def main() -> int:
     Path("/tmp/gbp_caption.txt").write_text(plan["gbp_caption"])
     Path("/tmp/video_prompt.txt").write_text(plan["video_prompt"])
 
+    audio_track = pick_audio_track(fmt["audio_mood"])
+    if audio_track:
+        print(f"[info] Audio track: {audio_track}")
+    else:
+        print(f"[info] No track in audio/{fmt['audio_mood']}/ or audio/ambient/ — workflow will use synth fallback")
+
     if github_output:
         with open(github_output, "a") as f:
             f.write(f"photo={rotation['photo_file']}\n")
             f.write(f"format={fmt['name']}\n")
             f.write(f"model={fmt['model']}\n")
             f.write(f"audio_mood={fmt['audio_mood']}\n")
+            f.write(f"audio_track={audio_track or ''}\n")
             f.write(f"video_url={video_url}\n")
     return 0
 
