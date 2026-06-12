@@ -219,6 +219,33 @@ new scenery when it pans). The prompt MUST:
   - Prefer atmospheric motion (light shifts, particles, steam, breeze, flame
     flicker) over camera movement when the photo is busy.
 
+EXAMPLES — how the same scene reads in a good vs bad prompt:
+
+  Cinematic format (camera barely moves)
+    ✅ GOOD: "Static shot, almost imperceptible 3% push-in centered on the
+       firebox. Existing flames flicker and breathe; embers pulse warmer.
+       The leather sofa's edge catches and releases a band of warm light.
+       Dust motes drift through the firelight. Camera holds steady."
+    ❌ BAD: "Camera glides past the fireplace to reveal the dining area
+       beyond."  — "reveal X beyond" forces the model to invent a dining
+       area in the direction of motion. Hallucination guaranteed.
+
+  UGC / lifestyle format (subtle human presence)
+    ✅ GOOD: "Locked-off, handheld feel. A hand already visible in the
+       lower-right of the frame nudges the copper poker resting on the
+       hearth; the flames respond. No camera movement; lens settles."
+    ❌ BAD: "A guest walks in carrying a mug of coffee and sits on the
+       sofa."  — "walks in" implies entry from off-frame, which the model
+       invents as a new doorway/hallway.
+
+  Dreamy format (held breath)
+    ✅ GOOD: "Camera is perfectly still. Soft lens bloom around the flames.
+       Gentle rack-focus between foreground sofa edge and background
+       mantle, both already in the photo. Snow outside the existing window
+       drifts at a hypnotic pace."
+    ❌ BAD: "Slow rack-focus reveals the antler chandelier above."
+       — "above" assumes a ceiling/chandelier the model must invent.
+
 Captions should feel like a human host, not a marketing bot.
 
 Output EXACTLY this JSON, nothing else:
@@ -241,8 +268,8 @@ def generate_captions(ctx: dict, rotation: dict, api_key: str) -> dict:
     )
 
     body = json.dumps({
-        "model": "claude-haiku-4-5-20251001",
-        "max_tokens": 800,
+        "model": "claude-fable-5",
+        "max_tokens": 1024,
         "messages": [{"role": "user", "content": prompt}],
     }).encode()
 
