@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import json
 import os
+import random
 import re
 import sys
 import time
@@ -39,6 +40,10 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+AUDIO_ROOT = REPO_ROOT / "audio"
+AUDIO_EXTS = {".mp3", ".m4a", ".wav", ".aac", ".ogg"}
 
 # --------------------------------------------------------------------------- #
 # Photos — curated for AI video. Each has a description Claude can read.
@@ -214,6 +219,33 @@ new scenery when it pans). The prompt MUST:
   - Prefer atmospheric motion (light shifts, particles, steam, breeze, flame
     flicker) over camera movement when the photo is busy.
 
+EXAMPLES — how the same scene reads in a good vs bad prompt:
+
+  Cinematic format (camera barely moves)
+    ✅ GOOD: "Static shot, almost imperceptible 3% push-in centered on the
+       firebox. Existing flames flicker and breathe; embers pulse warmer.
+       The leather sofa's edge catches and releases a band of warm light.
+       Dust motes drift through the firelight. Camera holds steady."
+    ❌ BAD: "Camera glides past the fireplace to reveal the dining area
+       beyond."  — "reveal X beyond" forces the model to invent a dining
+       area in the direction of motion. Hallucination guaranteed.
+
+  UGC / lifestyle format (subtle human presence)
+    ✅ GOOD: "Locked-off, handheld feel. A hand already visible in the
+       lower-right of the frame nudges the copper poker resting on the
+       hearth; the flames respond. No camera movement; lens settles."
+    ❌ BAD: "A guest walks in carrying a mug of coffee and sits on the
+       sofa."  — "walks in" implies entry from off-frame, which the model
+       invents as a new doorway/hallway.
+
+  Dreamy format (held breath)
+    ✅ GOOD: "Camera is perfectly still. Soft lens bloom around the flames.
+       Gentle rack-focus between foreground sofa edge and background
+       mantle, both already in the photo. Snow outside the existing window
+       drifts at a hypnotic pace."
+    ❌ BAD: "Slow rack-focus reveals the antler chandelier above."
+       — "above" assumes a ceiling/chandelier the model must invent.
+
 Captions should feel like a human host, not a marketing bot.
 
 Output EXACTLY this JSON, nothing else:
@@ -236,8 +268,8 @@ def generate_captions(ctx: dict, rotation: dict, api_key: str) -> dict:
     )
 
     body = json.dumps({
-        "model": "claude-haiku-4-5-20251001",
-        "max_tokens": 800,
+        "model": "claude-fable-5",
+        "max_tokens": 1024,
         "messages": [{"role": "user", "content": prompt}],
     }).encode()
 
@@ -358,6 +390,28 @@ def build_input_for(format_def: dict, image_url: str, video_prompt: str) -> dict
     raise ValueError(f"No input adapter for model {model}")
 
 # --------------------------------------------------------------------------- #
+# Audio track picker
+# --------------------------------------------------------------------------- #
+
+def pick_audio_track(mood: str) -> str | None:
+    """Return a repo-relative path to a random audio file for the given mood.
+
+    Looks in audio/<mood>/, then falls back to audio/ambient/. Returns None
+    if neither folder has a usable track — the workflow then uses a tamed
+    synth fallback so we never broadcast silence (or a steam locomotive).
+    """
+    for candidate in (mood, "ambient"):
+        folder = AUDIO_ROOT / candidate
+        if not folder.is_dir():
+            continue
+        tracks = sorted(p for p in folder.iterdir() if p.suffix.lower() in AUDIO_EXTS and not p.name.startswith("."))
+        if tracks:
+            chosen = random.choice(tracks)
+            return str(chosen.relative_to(REPO_ROOT))
+    return None
+
+
+# --------------------------------------------------------------------------- #
 # Main
 # --------------------------------------------------------------------------- #
 
@@ -401,12 +455,19 @@ def main() -> int:
     Path("/tmp/gbp_caption.txt").write_text(plan["gbp_caption"])
     Path("/tmp/video_prompt.txt").write_text(plan["video_prompt"])
 
+    audio_track = pick_audio_track(fmt["audio_mood"])
+    if audio_track:
+        print(f"[info] Audio track: {audio_track}")
+    else:
+        print(f"[info] No track in audio/{fmt['audio_mood']}/ or audio/ambient/ — workflow will use synth fallback")
+
     if github_output:
         with open(github_output, "a") as f:
             f.write(f"photo={rotation['photo_file']}\n")
             f.write(f"format={fmt['name']}\n")
             f.write(f"model={fmt['model']}\n")
             f.write(f"audio_mood={fmt['audio_mood']}\n")
+            f.write(f"audio_track={audio_track or ''}\n")
             f.write(f"video_url={video_url}\n")
     return 0
 

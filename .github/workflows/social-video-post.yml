@@ -8,10 +8,15 @@ on:
   workflow_dispatch:
     inputs:
       test_mode:
-        description: 'Test mode: generate video but skip FB/IG posting (Slack still notified)'
+        description: 'Test mode: generate video only, skip R2 upload + Slack approval card (nothing posted)'
         type: boolean
         required: false
         default: false
+
+# Wed/Fri auto videos are NO LONGER posted directly. This workflow generates
+# the video, adds ambient audio, stores it in R2, and posts an Approve/Reject
+# card to #social via the Slanted Stone Video Bot. Approving there dispatches
+# post-existing-video.yml, which does the actual Facebook + Instagram posting.
 
 jobs:
   create-and-post:
@@ -26,6 +31,11 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Set up Node (for wrangler R2 upload)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Generate video (multi-model routing)
         id: video
         env:
@@ -33,45 +43,58 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python3 scripts/social_video_generate.py
 
-      - name: Add ambient audio to video
+      - name: Add audio to video
         if: steps.video.outputs.video_url != ''
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null 2>&1
           MOOD="${{ steps.video.outputs.audio_mood }}"
-          echo "Adding ${MOOD} ambient audio..."
-
-          case "$MOOD" in
-            fireplace)
-              ffmpeg -f lavfi -i "anoisesrc=d=3:c=brown:r=44100:a=0.08" \
-                -af "lowpass=f=400,highpass=f=50,tremolo=f=8:d=0.4,volume=1.5" \
-                -t 3 /tmp/ambient_short.wav -y 2>/dev/null
-              ;;
-            forest)
-              ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.05" \
-                -af "lowpass=f=3000,highpass=f=200,tremolo=f=2:d=0.3" \
-                -t 3 /tmp/ambient_short.wav -y 2>/dev/null
-              ;;
-            rain)
-              ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.1" \
-                -af "bandpass=f=1000:w=800,volume=0.8" \
-                -t 3 /tmp/ambient_short.wav -y 2>/dev/null
-              ;;
-            evening)
-              ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.03" \
-                -af "lowpass=f=2000,highpass=f=100,tremolo=f=0.5:d=0.2" \
-                -t 3 /tmp/ambient_short.wav -y 2>/dev/null
-              ;;
-            *)
-              ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.06" \
-                -af "lowpass=f=600,highpass=f=80" \
-                -t 3 /tmp/ambient_short.wav -y 2>/dev/null
-              ;;
-          esac
-
+          TRACK="${{ steps.video.outputs.audio_track }}"
           DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 /tmp/video.mp4 | cut -d. -f1)
           echo "Video duration: ${DURATION}s"
 
-          ffmpeg -stream_loop -1 -i /tmp/ambient_short.wav -t ${DURATION} /tmp/ambient.wav -y 2>/dev/null
+          if [ -n "$TRACK" ] && [ -f "$TRACK" ]; then
+            # Real music track from audio/<mood>/. Loop to video duration
+            # (no-op if track is longer than the video), attenuate to ~60%
+            # so it doesn't drown the future voiceover work.
+            echo "Using audio track: $TRACK"
+            ffmpeg -stream_loop -1 -i "$TRACK" -t ${DURATION} -af "volume=0.6" \
+              -ar 44100 -ac 2 /tmp/ambient.wav -y 2>/dev/null
+          else
+            # Fallback: defanged synth ambient (the original synth had an
+            # 8 Hz tremolo on the fireplace mood that sounded like a steam
+            # locomotive). These recipes have NO aggressive tremolo.
+            echo "No track in audio/${MOOD}/ or audio/ambient/ — using synth fallback for ${MOOD}"
+            case "$MOOD" in
+              fireplace)
+                ffmpeg -f lavfi -i "anoisesrc=d=3:c=brown:r=44100:a=0.06" \
+                  -af "lowpass=f=350,highpass=f=40,volume=1.1" \
+                  -t 3 /tmp/ambient_short.wav -y 2>/dev/null
+                ;;
+              forest)
+                ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.04" \
+                  -af "lowpass=f=3000,highpass=f=200" \
+                  -t 3 /tmp/ambient_short.wav -y 2>/dev/null
+                ;;
+              rain)
+                ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.08" \
+                  -af "bandpass=f=1000:w=800,volume=0.8" \
+                  -t 3 /tmp/ambient_short.wav -y 2>/dev/null
+                ;;
+              evening)
+                ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.03" \
+                  -af "lowpass=f=2000,highpass=f=100" \
+                  -t 3 /tmp/ambient_short.wav -y 2>/dev/null
+                ;;
+              *)
+                ffmpeg -f lavfi -i "anoisesrc=d=3:c=pink:r=44100:a=0.05" \
+                  -af "lowpass=f=600,highpass=f=80" \
+                  -t 3 /tmp/ambient_short.wav -y 2>/dev/null
+                ;;
+            esac
+            ffmpeg -stream_loop -1 -i /tmp/ambient_short.wav -t ${DURATION} /tmp/ambient.wav -y 2>/dev/null
+          fi
+
+          # Fade in/out the last 1s, then mux onto the video.
           ffmpeg -i /tmp/ambient.wav -af "afade=t=in:st=0:d=1,afade=t=out:st=$((DURATION-1)):d=1" /tmp/ambient_faded.wav -y 2>/dev/null
           ffmpeg -i /tmp/video.mp4 -i /tmp/ambient_faded.wav \
             -c:v copy -c:a aac -b:a 128k -shortest \
@@ -79,123 +102,88 @@ jobs:
           mv /tmp/video_with_audio.mp4 /tmp/video.mp4
           echo "Audio added successfully"
 
-      - name: Post video to Facebook
+      - name: Upload pending video + captions to R2
         if: steps.video.outputs.video_url != '' && inputs.test_mode != true
         env:
-          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
-          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          CAPTION=$(cat /tmp/fb_caption.txt)
-          RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v25.0/${FB_PAGE_ID}/videos" \
-            -F "source=@/tmp/video.mp4" \
-            -F "description=$(echo "$CAPTION")" \
-            -F "access_token=${FB_PAGE_ACCESS_TOKEN}")
-          echo "Facebook response: $RESPONSE"
-          if echo "$RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
-            echo "Warning: Facebook video post failed"
-            echo "$RESPONSE" | jq '.error'
-          else
-            echo "Posted video to Facebook: $(echo "$RESPONSE" | jq -r '.id')"
-          fi
-
-      - name: Post video to Instagram as Reel
-        if: steps.video.outputs.video_url != '' && inputs.test_mode != true
-        env:
-          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
-          IG_ACCOUNT_ID: ${{ secrets.IG_ACCOUNT_ID }}
-        run: |
-          IG_CAPTION=$(cat /tmp/ig_caption.txt)
-          FILE_SIZE=$(stat -c%s /tmp/video.mp4)
-
-          RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v25.0/${IG_ACCOUNT_ID}/media" \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"media_type\": \"REELS\",
-              \"upload_type\": \"resumable\",
-              \"caption\": $(echo "$IG_CAPTION" | jq -Rs .),
-              \"access_token\": \"${FB_PAGE_ACCESS_TOKEN}\"
-            }")
-          echo "Instagram container response: $RESPONSE"
-          CONTAINER_ID=$(echo "$RESPONSE" | jq -r '.id')
-
-          if [ "$CONTAINER_ID" = "null" ] || [ -z "$CONTAINER_ID" ]; then
-            echo "Warning: Instagram container creation failed"
-            echo "$RESPONSE" | jq '.error'
-          else
-            echo "Uploading video file (${FILE_SIZE} bytes)..."
-            UPLOAD_RESPONSE=$(curl -s -X POST \
-              "https://rupload.facebook.com/ig-api-upload/v25.0/${CONTAINER_ID}" \
-              -H "Authorization: OAuth ${FB_PAGE_ACCESS_TOKEN}" \
-              -H "offset: 0" \
-              -H "file_size: ${FILE_SIZE}" \
-              --data-binary "@/tmp/video.mp4")
-            echo "Upload response: $UPLOAD_RESPONSE"
-
-            echo "Waiting for Instagram to process video..."
-            for i in $(seq 1 10); do
-              sleep 30
-              STATUS_RESPONSE=$(curl -s "https://graph.facebook.com/v25.0/${CONTAINER_ID}?fields=status_code&access_token=${FB_PAGE_ACCESS_TOKEN}")
-              STATUS=$(echo "$STATUS_RESPONSE" | jq -r '.status_code')
-              echo "Poll ${i}: ${STATUS}"
-              if [ "$STATUS" = "FINISHED" ]; then break
-              elif [ "$STATUS" = "ERROR" ]; then
-                echo "Video processing failed"
-                echo "$STATUS_RESPONSE" | jq '.'
-                break
-              fi
-            done
-
-            if [ "$STATUS" = "FINISHED" ]; then
-              PUB_RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v25.0/${IG_ACCOUNT_ID}/media_publish" \
-                -H "Content-Type: application/json" \
-                -d "{
-                  \"creation_id\": \"${CONTAINER_ID}\",
-                  \"access_token\": \"${FB_PAGE_ACCESS_TOKEN}\"
-                }")
-              echo "Instagram publish response: $PUB_RESPONSE"
-              if echo "$PUB_RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
-                echo "Warning: Instagram publish failed"
-                echo "$PUB_RESPONSE" | jq '.error'
-              else
-                echo "Posted to Instagram: $(echo "$PUB_RESPONSE" | jq -r '.id')"
-              fi
-            else
-              echo "Warning: Instagram video processing did not finish in time"
-            fi
-          fi
-
-      - name: Send to Slack
-        if: steps.video.outputs.video_url != ''
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_SOCIAL }}
-        run: |
-          VIDEO_URL="${{ steps.video.outputs.video_url }}"
-          IG_CAPTION=$(cat /tmp/ig_caption.txt)
-          GBP_CAPTION=$(cat /tmp/gbp_caption.txt)
-          FB_CAPTION=$(cat /tmp/fb_caption.txt)
+          RUN_ID="${{ github.run_id }}"
           PHOTO="${{ steps.video.outputs.photo }}"
           FORMAT="${{ steps.video.outputs.format }}"
           MODEL="${{ steps.video.outputs.model }}"
 
+          # Stash the captions next to the video so the worker can read them on approve.
           jq -n \
-            --arg video "$VIDEO_URL" \
-            --arg fb "$FB_CAPTION" \
-            --arg ig "$IG_CAPTION" \
-            --arg gbp "$GBP_CAPTION" \
+            --arg fb "$(cat /tmp/fb_caption.txt)" \
+            --arg ig "$(cat /tmp/ig_caption.txt)" \
+            --arg gbp "$(cat /tmp/gbp_caption.txt)" \
             --arg photo "$PHOTO" \
             --arg format "$FORMAT" \
             --arg model "$MODEL" \
+            '{fb_caption:$fb, ig_caption:$ig, gbp_caption:$gbp, photo:$photo, format:$format, model:$model}' \
+            > /tmp/meta.json
+
+          npx --yes wrangler r2 object put "slanted-stone-videos/pending/${RUN_ID}.mp4" \
+            --file=/tmp/video.mp4 --content-type=video/mp4 --remote
+          npx --yes wrangler r2 object put "slanted-stone-videos/pending/${RUN_ID}.json" \
+            --file=/tmp/meta.json --content-type=application/json --remote
+
+      - name: Post approval card to Slack
+        if: steps.video.outputs.video_url != '' && inputs.test_mode != true
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL: ${{ secrets.SLACK_SOCIAL_CHANNEL_ID }}
+          VIDEO_SIGN_SECRET: ${{ secrets.VIDEO_SIGN_SECRET }}
+        run: |
+          RUN_ID="${{ github.run_id }}"
+          PHOTO="${{ steps.video.outputs.photo }}"
+          FORMAT="${{ steps.video.outputs.format }}"
+          MODEL="${{ steps.video.outputs.model }}"
+          FB_CAPTION=$(cat /tmp/fb_caption.txt)
+          IG_CAPTION=$(cat /tmp/ig_caption.txt)
+          GBP_CAPTION=$(cat /tmp/gbp_caption.txt)
+
+          # Signed, hard-to-guess URL to the pending video (matches the worker's HMAC).
+          SIG=$(printf '%s' "${RUN_ID}.mp4" | openssl dgst -sha256 -hmac "$VIDEO_SIGN_SECRET" | sed 's/^.* //')
+          WATCH_URL="https://slantedstone.com/api/video/file/${RUN_ID}.mp4?sig=${SIG}"
+          PHOTO_ENC=$(jq -rn --arg p "$PHOTO" '$p|@uri')
+          IMAGE_URL="https://slantedstone.com/images/${PHOTO_ENC}"
+
+          jq -n \
+            --arg channel "$SLACK_CHANNEL" \
+            --arg watch "$WATCH_URL" \
+            --arg image "$IMAGE_URL" \
+            --arg run "$RUN_ID" \
+            --arg format "$FORMAT" \
+            --arg model "$MODEL" \
+            --arg photo "$PHOTO" \
+            --arg fb "$FB_CAPTION" \
+            --arg ig "$IG_CAPTION" \
+            --arg gbp "$GBP_CAPTION" \
             '{
-              "blocks": [
-                {"type": "header", "text": {"type": "plain_text", "text": "Social Media Video Ready"}},
-                {"type": "section", "text": {"type": "mrkdwn", "text": ("*Format:* " + $format + "\n*Model:* " + $model + "\n*Photo:* " + $photo + "\n*Video:* " + $video)}},
-                {"type": "divider"},
-                {"type": "section", "text": {"type": "mrkdwn", "text": ("*Facebook (auto-posted):*\n" + $fb)}},
-                {"type": "divider"},
-                {"type": "section", "text": {"type": "mrkdwn", "text": ("*Instagram (auto-posted as Reel):*\n" + $ig)}},
-                {"type": "divider"},
-                {"type": "section", "text": {"type": "mrkdwn", "text": ("*Google Business Profile (post manually):*\n" + $gbp + "\n\n<https://business.google.com/posts|Open GBP Posts>")}}
+              channel: $channel,
+              text: ("New auto video awaiting approval — watch: " + $watch),
+              blocks: [
+                {type:"header", text:{type:"plain_text", text:"🎬 New auto video — approve to post?", emoji:true}},
+                {type:"section", text:{type:"mrkdwn", text:("*Format:* " + $format + "\n*Model:* " + $model + "\n*Photo:* " + $photo)}},
+                {type:"image", image_url:$image, alt_text:"Source photo"},
+                {type:"section", text:{type:"mrkdwn", text:("▶ *<" + $watch + "|Watch the generated video>*")}},
+                {type:"divider"},
+                {type:"section", text:{type:"mrkdwn", text:("*Facebook:*\n" + $fb)}},
+                {type:"section", text:{type:"mrkdwn", text:("*Instagram:*\n" + $ig)}},
+                {type:"section", text:{type:"mrkdwn", text:("*Google Business Profile (post manually after approval):*\n" + $gbp)}},
+                {type:"actions", elements:[
+                  {type:"button", action_id:"approve_video", style:"primary", text:{type:"plain_text", text:"✅ Approve & Post", emoji:true}, value:$run},
+                  {type:"button", action_id:"reject_video", style:"danger", text:{type:"plain_text", text:"🚫 Reject", emoji:true}, value:$run}
+                ]}
               ]
-            }' | curl -s -X POST "$SLACK_WEBHOOK" \
-              -H "Content-Type: application/json" \
-              -d @-
+            }' > /tmp/slack_card.json
+
+          RESPONSE=$(curl -s -X POST https://slack.com/api/chat.postMessage \
+            -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" \
+            -H "Content-Type: application/json; charset=utf-8" \
+            --data @/tmp/slack_card.json)
+          echo "Slack response: $RESPONSE"
+          echo "$RESPONSE" | jq -e '.ok == true' > /dev/null || { echo "Slack post failed"; exit 1; }
+          echo "Approval card posted to #social. Awaiting Approve/Reject."
