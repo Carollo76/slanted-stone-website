@@ -211,8 +211,14 @@ new scenery when it pans). The prompt MUST:
   - For human presence (UGC formats), describe people entering or moving
     naturally WITHIN the visible space, never appearing from a place
     outside the frame.
-  - Prefer atmospheric motion (light shifts, particles, steam, breeze, flame
-    flicker) over camera movement when the photo is busy.
+  - Prefer atmospheric motion (light shifts, particles, steam, breeze) over
+    camera movement when the photo is busy.
+  - NEVER introduce fire, flames, a firepit, candles, or glowing embers. Only
+    describe flame motion when a fire is ALREADY clearly lit and visible in the
+    photo, and even then anchor it strictly to the firebox or hearth it sits in
+    (e.g. "existing flames in the firebox flicker"). If no lit fire is visible,
+    do not mention fire, flame, embers, or "warm glow" at all — the image-to-video
+    model will hallucinate a fire onto a coffee table, rug, or floor.
 
 Captions should feel like a human host, not a marketing bot.
 
