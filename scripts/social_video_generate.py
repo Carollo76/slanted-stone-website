@@ -88,8 +88,9 @@ FORMATS = [
         "style_hint": (
             "Cinematic image-to-video. The camera barely moves: micro push-in OR "
             "micro pull-back of 5-10%, that is it. Stay anchored to what is in "
-            "the photo. Atmospheric motion only: flame flicker, steam, snow drift, "
+            "the photo. Atmospheric motion only: steam, snow drift, "
             "leaves shifting, light gradient. No new scenery should appear. "
+            "Do NOT add fire or flames unless a fire is already lit in the photo. "
             "Feels like the opening shot of a luxury travel ad."
         ),
     },
