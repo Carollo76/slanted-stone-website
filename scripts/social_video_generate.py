@@ -93,8 +93,9 @@ FORMATS = [
         "style_hint": (
             "Cinematic image-to-video. The camera barely moves: micro push-in OR "
             "micro pull-back of 5-10%, that is it. Stay anchored to what is in "
-            "the photo. Atmospheric motion only: flame flicker, steam, snow drift, "
+            "the photo. Atmospheric motion only: steam, snow drift, "
             "leaves shifting, light gradient. No new scenery should appear. "
+            "Do NOT add fire or flames unless a fire is already lit in the photo. "
             "Feels like the opening shot of a luxury travel ad."
         ),
     },
@@ -216,32 +217,37 @@ new scenery when it pans). The prompt MUST:
   - For human presence (UGC formats), describe people entering or moving
     naturally WITHIN the visible space, never appearing from a place
     outside the frame.
-  - Prefer atmospheric motion (light shifts, particles, steam, breeze, flame
-    flicker) over camera movement when the photo is busy.
+  - Prefer atmospheric motion (light shifts, particles, steam, breeze) over
+    camera movement when the photo is busy.
+  - NEVER introduce fire, flames, a firepit, candles, or glowing embers. Only
+    describe flame motion when a fire is ALREADY clearly lit and visible in the
+    photo, and even then anchor it strictly to the firebox or hearth it sits in
+    (e.g. "existing flames in the firebox flicker"). If no lit fire is visible,
+    do not mention fire, flame, embers, or "warm glow" at all — the image-to-video
+    model will hallucinate a fire onto a coffee table, rug, or floor.
 
 EXAMPLES — how the same scene reads in a good vs bad prompt:
 
   Cinematic format (camera barely moves)
     ✅ GOOD: "Static shot, almost imperceptible 3% push-in centered on the
-       firebox. Existing flames flicker and breathe; embers pulse warmer.
-       The leather sofa's edge catches and releases a band of warm light.
-       Dust motes drift through the firelight. Camera holds steady."
+       leather sofa. Late-afternoon light shifts slowly across the cushions;
+       dust motes drift through the window light. Camera holds steady."
     ❌ BAD: "Camera glides past the fireplace to reveal the dining area
        beyond."  — "reveal X beyond" forces the model to invent a dining
        area in the direction of motion. Hallucination guaranteed.
 
   UGC / lifestyle format (subtle human presence)
     ✅ GOOD: "Locked-off, handheld feel. A hand already visible in the
-       lower-right of the frame nudges the copper poker resting on the
-       hearth; the flames respond. No camera movement; lens settles."
+       lower-right of the frame sets a mug on the existing coffee table;
+       steam rises from it. No camera movement; lens settles."
     ❌ BAD: "A guest walks in carrying a mug of coffee and sits on the
        sofa."  — "walks in" implies entry from off-frame, which the model
        invents as a new doorway/hallway.
 
   Dreamy format (held breath)
-    ✅ GOOD: "Camera is perfectly still. Soft lens bloom around the flames.
+    ✅ GOOD: "Camera is perfectly still. Soft lens bloom on the window light.
        Gentle rack-focus between foreground sofa edge and background
-       mantle, both already in the photo. Snow outside the existing window
+       bookshelf, both already in the photo. Snow outside the existing window
        drifts at a hypnotic pace."
     ❌ BAD: "Slow rack-focus reveals the antler chandelier above."
        — "above" assumes a ceiling/chandelier the model must invent.
