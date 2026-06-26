@@ -39,70 +39,83 @@ jobs:
           DATE="${{ steps.date.outputs.date }}"
           MONTH_NUM="${{ steps.date.outputs.month_num }}"
 
-          # --- SEO keyword rotation -------------------------------------------
-          # Booking-intent, long-tail targets a brand-new site can realistically
-          # rank for. Rotates by month. After the list cycles, a repeat target
-          # refreshes its own canonical post (good for SEO) rather than adding a
-          # thin duplicate. Edit these arrays to change the editorial calendar.
+          # --- SEO editorial calendar (12 months, seasonally aligned) ----------
+          # One booking-intent target per month, indexed Jan=0 .. Dec=11, so each
+          # post publishes IN its season (winter content in winter, fall foliage
+          # in October, etc.). Most targets are fully evergreen/year-round; only a
+          # few lean seasonal, spread across ALL four seasons — the property is a
+          # year-round getaway, not a winter one. Year over year a target refreshes
+          # its own canonical post (good for SEO), not a thin duplicate.
+          #            Jan       Feb        Mar         Apr     May      Jun       Jul       Aug      Sep        Oct      Nov       Dec
           SLUGS=(
+            "poconos-winter-getaway-hot-tub"
+            "romantic-poconos-getaway-cabin"
+            "cabins-near-camelback-mountain"
             "poconos-cabin-with-sauna"
+            "large-group-cabin-rentals-poconos"
             "cabins-near-kalahari-waterpark"
             "cabins-near-pocono-raceway"
-            "large-group-cabin-rentals-poconos"
-            "poconos-winter-getaway-hot-tub"
-            "cabins-near-camelback-mountain"
-            "pocono-pines-vacation-rental-sleeps-8"
+            "poconos-summer-getaway-cabin"
             "things-to-do-near-pocono-pines"
-            "romantic-poconos-getaway-cabin"
+            "poconos-fall-foliage-getaway-cabin"
+            "pocono-pines-vacation-rental-sleeps-8"
             "poconos-cabin-with-game-room"
           )
           KEYWORDS=(
+            "Poconos winter getaway with a hot tub"
+            "romantic Poconos getaway cabin"
+            "cabins near Camelback Mountain"
             "Poconos cabin with a sauna"
+            "large group cabin rentals in the Poconos"
             "cabins near Kalahari Waterpark"
             "cabins near Pocono Raceway"
-            "large group cabin rentals in the Poconos"
-            "Poconos winter getaway with a hot tub"
-            "cabins near Camelback Mountain"
-            "Pocono Pines vacation rental that sleeps 8"
+            "Poconos summer getaway cabin"
             "things to do near Pocono Pines"
-            "romantic Poconos getaway cabin"
+            "Poconos fall foliage getaway"
+            "Pocono Pines vacation rental that sleeps 8"
             "Poconos cabin with a game room"
           )
           TITLES=(
+            "Poconos Winter Getaway: A Cabin With a Hot Tub and Sauna"
+            "A Romantic Poconos Getaway: Secluded Cabin With a Sauna and Hot Tub"
+            "Cabins Near Camelback Mountain: Skiing, Waterparks and Year-Round Fun"
             "Poconos Cabin With a Sauna: The Finnish Barrel Sauna at Slanted Stone"
+            "Large Group Cabin Rentals in the Poconos (Sleeps 8+)"
             "Where to Stay Near Kalahari Waterpark: A Pocono Cabin That Sleeps 8"
             "Best Cabins Near Pocono Raceway for Race Weekend"
-            "Large Group Cabin Rentals in the Poconos (Sleeps 8+)"
-            "Poconos Winter Getaway With a Hot Tub and Sauna"
-            "Cabins Near Camelback Mountain for a Poconos Ski Trip"
-            "Pocono Pines Vacation Rental That Sleeps 8"
+            "A Poconos Summer Getaway: Cabin Near the Lakes With a Hot Tub and Sauna"
             "Things to Do Near Pocono Pines: A Local Guide for Your Stay"
-            "A Romantic Poconos Getaway: Secluded Cabin With a Sauna and Hot Tub"
+            "Poconos Fall Foliage Getaway: A Cozy Cabin in Pocono Pines"
+            "Pocono Pines Vacation Rental That Sleeps 8"
             "Poconos Cabin With a Game Room: Inside the Slanted Stone Game Loft"
           )
           DESCRIPTIONS=(
+            "Plan a cozy Poconos winter getaway at Slanted Stone Chalet, with a hot tub, Finnish sauna, firepit, and forest views minutes from Camelback Mountain."
+            "Plan a romantic Poconos getaway at Slanted Stone Chalet, a secluded Pocono Pines cabin with a Finnish sauna, hot tub, firepit, and forest views."
+            "Visiting Camelback Mountain? Slanted Stone Chalet is a luxury cabin 20 minutes away with a hot tub and Finnish sauna, great for ski season and summer alike."
             "Searching for a Poconos cabin with a sauna? Tour the authentic Finnish barrel sauna at Slanted Stone Chalet in Pocono Pines, and book your stay direct."
+            "Need a big Poconos cabin for a group? Slanted Stone Chalet sleeps 8 across 4 bedrooms in Pocono Pines, with a game loft, hot tub, and Finnish sauna."
             "Planning a Kalahari Waterpark trip? Slanted Stone Chalet is a luxury Pocono cabin just 14 minutes away that sleeps 8, ideal for families and groups."
             "Heading to Pocono Raceway? Stay 11 minutes from the track at Slanted Stone Chalet, a luxury cabin that sleeps 8 with a hot tub, sauna, and firepit."
-            "Need a big Poconos cabin for a group? Slanted Stone Chalet sleeps 8 across 4 bedrooms in Pocono Pines, with a game loft, hot tub, and Finnish sauna."
-            "Plan a cozy Poconos winter getaway at Slanted Stone Chalet, with a hot tub, Finnish sauna, firepit, and forest views minutes from Camelback Mountain."
-            "Skiing Camelback Mountain? Slanted Stone Chalet is a luxury cabin 20 minutes away with a hot tub and Finnish sauna to warm up after the slopes."
-            "A 2,900 sq ft Pocono Pines vacation rental that sleeps 8 across 4 bedrooms, with a hot tub, Finnish sauna, game loft, and gourmet kitchen. Book direct."
+            "Plan a Poconos summer getaway at Slanted Stone Chalet, a Pocono Pines cabin near Bradys Lake and Kalahari with a hot tub, sauna, and firepit. Sleeps 8."
             "From Kalahari to Camelback to Tobyhanna State Park, here are the best things to do near Pocono Pines, plus where to stay at Slanted Stone Chalet."
-            "Plan a romantic Poconos getaway at Slanted Stone Chalet, a secluded Pocono Pines cabin with a Finnish sauna, hot tub, firepit, and forest views."
+            "See peak fall foliage from Slanted Stone Chalet, a Pocono Pines cabin with forest views, a hot tub, Finnish sauna, and firepit. Sleeps 8. Book direct."
+            "A 2,900 sq ft Pocono Pines vacation rental that sleeps 8 across 4 bedrooms, with a hot tub, Finnish sauna, game loft, and gourmet kitchen. Book direct."
             "Rainy-day plans sorted. Slanted Stone Chalet is a Poconos cabin with a game loft and shuffleboard, plus a Finnish sauna, hot tub, and firepit."
           )
           FOCI=(
-            "Center the post on the authentic Finnish barrel sauna experience and why a sauna elevates a Poconos cabin stay: the wellness ritual, the contrast with cold mountain air and the hot tub, and who loves it."
-            "Help a family planning a Kalahari Waterpark trip: the 14-minute drive, why a cabin that sleeps 8 beats a hotel for groups, and the amenities waiting back at the chalet."
-            "Target race-weekend visitors to Pocono Raceway: the 11-minute proximity, why a group cabin beats race-weekend hotels, and unwinding in the hot tub after a day at the track."
-            "Speak to groups and families needing space: four bedrooms, 2,900 sq ft, the game loft, a gourmet kitchen for group meals, and comfortable common space for eight guests."
             "Sell the winter mood: hot tub and sauna in the snow, firepit s'mores, proximity to Camelback skiing, and the cozy great room. Evocative and seasonal."
-            "Target skiers and snow-tubers at Camelback Mountain: the 20-minute drive, apres-ski recovery in the sauna and hot tub, and why a cabin suits a ski group."
-            "A clear property overview optimized for the head term: walk through the four bedrooms, the amenities, and who the chalet suits, with a strong booking call to action."
-            "A genuinely useful area guide covering the nearby attractions with drive times, framed for someone deciding where to stay, funnelling naturally toward booking the chalet."
-            "Target couples: lean into seclusion, the sauna and hot tub, firepit evenings, and forest views. Note couples can book the whole chalet for a private retreat."
-            "Target families and groups wanting indoor fun: the game loft with shuffleboard, rainy-day appeal, and how it rounds out a group stay alongside the sauna and hot tub."
+            "Target couples: seclusion, the sauna and hot tub, firepit evenings, and forest views. Couples can book the whole cabin for a private retreat any time of year."
+            "Frame Camelback as a year-round destination: skiing and snow-tubing in winter, Camelbeach waterpark and the mountain coaster in summer. The 20-minute drive, plus sauna and hot tub for recovery. Do not make it ski-only."
+            "Center on the authentic Finnish barrel sauna and why a sauna elevates a Poconos stay any time of year: the wellness ritual, contrast with the hot tub and fresh mountain air, and who loves it."
+            "Speak to groups and families needing space: four bedrooms, 2,900 sq ft, the game loft, a gourmet kitchen for group meals, and comfortable common space for eight. Great for reunions and celebrations year-round."
+            "Help a family planning a Kalahari Waterpark trip: the 14-minute drive, why a cabin that sleeps 8 beats a hotel, and the amenities back at the cabin. Note Kalahari is indoor and open year-round."
+            "Target race-weekend visitors to Pocono Raceway: the 11-minute proximity, why a group cabin beats race-weekend hotels, and unwinding in the hot tub after a day at the track."
+            "Sell summer in the Poconos: Bradys Lake 12 minutes away, Kalahari, hiking at Tobyhanna State Park, plus firepit nights and the hot tub under the stars. Active days, relaxed evenings."
+            "A genuinely useful, year-round area guide covering nearby attractions with drive times, framed for someone deciding where to stay, funnelling naturally toward booking the cabin."
+            "Fall in the Poconos: peak foliage timing in early-to-mid October, scenic drives and hikes at Tobyhanna and the Delaware Water Gap, forest views from the cabin, and the sauna and firepit in crisp air."
+            "A clear property overview optimized for the head term: walk through the four bedrooms, the amenities, and who the cabin suits (great for holiday gatherings), with a strong booking call to action."
+            "Target families and groups wanting indoor fun, great for holiday gatherings: the game loft with shuffleboard, cozy indoor time, and how it rounds out a stay alongside the sauna and hot tub."
           )
           N=${#SLUGS[@]}
           IDX=$(( (10#${MONTH_NUM} - 1) % N ))
