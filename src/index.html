@@ -566,8 +566,8 @@ footer ul a:hover{color:var(--gold2)}
         <tbody>
           {% for season in rates.seasons %}
           <tr style="border-bottom:1px solid var(--cream2)">
-            <td style="padding:1rem 1.25rem;font-family:var(--serif);font-size:1.05rem;color:var(--ink)">{{ season.label }}</td>
-            <td style="padding:1rem 1.25rem;font-size:.9rem;color:var(--muted)">{{ season.months }}</td>
+            <td style="padding:1rem 1.25rem;font-family:var(--serif);font-size:1.05rem;color:var(--ink)">{{ season.label | escape }}</td>
+            <td style="padding:1rem 1.25rem;font-size:.9rem;color:var(--muted)">{{ season.months | escape }}</td>
             <td style="padding:1rem 1.25rem;text-align:right;font-size:.95rem;color:var(--ink2);white-space:nowrap">${{ season.from }} – ${{ season.to }}</td>
             <td style="padding:1rem 1.25rem;text-align:right;font-size:.95rem;color:var(--ink2);white-space:nowrap">{{ season.minStay }} nights</td>
           </tr>
