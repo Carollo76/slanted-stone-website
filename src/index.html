@@ -50,7 +50,7 @@
     "@type": "Place",
     "name": "Lake Naomi / Timber Trails, Pocono Pines, Pennsylvania"
   },
-  "priceRange": "$275-$1500",
+  "priceRange": "{% if rates %}${{ rates.lowestNightly }}-${{ rates.highestNightly }}{% else %}$275-$1500{% endif %}",
   "currenciesAccepted": "USD",
   "checkinTime": "16:00",
   "checkoutTime": "10:00",
@@ -104,7 +104,28 @@
       {"@type": "LocationFeatureSpecification", "name": "Free Parking", "value": true}
     ]
   },
-  "potentialAction": {
+{% if rates %}
+  "makesOffer": [
+    {%- for season in rates.seasons %}
+    {
+      "@type": "Offer",
+      "name": "{{ season.label }} nightly rate",
+      "description": "{{ season.months }}. Minimum stay {{ season.minStay }} nights. Rates before fees and taxes.",
+      "availability": "https://schema.org/InStock",
+      "priceCurrency": "USD",
+      "priceSpecification": {
+        "@type": "UnitPriceSpecification",
+        "priceCurrency": "USD",
+        "minPrice": {{ season.from }},
+        "maxPrice": {{ season.to }},
+        "unitCode": "DAY",
+        "valueAddedTaxIncluded": false
+      },
+      "itemOffered": {"@type": "Accommodation", "name": "Slanted Stone Chalet"}
+    }{% unless forloop.last %},{% endunless %}
+    {%- endfor %}
+  ],
+{% endif %}  "potentialAction": {
     "@type": "ReserveAction",
     "target": {
       "@type": "EntryPoint",
@@ -516,6 +537,49 @@ footer ul a:hover{color:var(--gold2)}
     </div>
     <div style="text-align:center">
       <a href="/blog/" class="btn-outline-dark" style="display:inline-block;border:1px solid var(--ink);color:var(--ink);font-size:.72rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;padding:.85rem 2rem;border-radius:2px;transition:background .2s,color .2s" onmouseover="this.style.background='var(--ink)';this.style.color='var(--white)'" onmouseout="this.style.background='';this.style.color='var(--ink)'">View All Posts</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- RATES -->
+{% if rates %}
+<section id="rates" style="padding:6rem 0;background:var(--cream)">
+  <div class="container">
+    <div class="fade-in" style="text-align:center;margin-bottom:3rem">
+      <div class="eyebrow">Rates &amp; Minimum Stay</div>
+      <h2 class="section-heading">What It Costs to Stay</h2>
+      <p style="color:var(--muted);font-size:1rem;line-height:1.7;max-width:600px;margin:1rem auto 0">Nightly rates for the whole chalet — four bedrooms, sleeps eight. Rates move with demand, so these are the ranges you can expect by season.</p>
+    </div>
+
+    <div class="fade-in" style="max-width:760px;margin:0 auto;overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;background:var(--white);border-radius:4px">
+        <caption style="caption-side:bottom;padding-top:1rem;font-size:.8rem;color:var(--muted);text-align:left;line-height:1.6">{{ rates.disclaimer }} Rates as of {{ rates.updated }}. Check current availability and your exact total on the booking page.</caption>
+        <thead>
+          <tr style="border-bottom:1px solid var(--cream3)">
+            <th scope="col" style="text-align:left;padding:1rem 1.25rem;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500">Season</th>
+            <th scope="col" style="text-align:left;padding:1rem 1.25rem;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500">Months</th>
+            <th scope="col" style="text-align:right;padding:1rem 1.25rem;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500">Per night</th>
+            <th scope="col" style="text-align:right;padding:1rem 1.25rem;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500">Min stay</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for season in rates.seasons %}
+          <tr style="border-bottom:1px solid var(--cream2)">
+            <td style="padding:1rem 1.25rem;font-family:var(--serif);font-size:1.05rem;color:var(--ink)">{{ season.label }}</td>
+            <td style="padding:1rem 1.25rem;font-size:.9rem;color:var(--muted)">{{ season.months }}</td>
+            <td style="padding:1rem 1.25rem;text-align:right;font-size:.95rem;color:var(--ink2);white-space:nowrap">${{ season.from }} – ${{ season.to }}</td>
+            <td style="padding:1rem 1.25rem;text-align:right;font-size:.95rem;color:var(--ink2);white-space:nowrap">{{ season.minStay }} nights</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="fade-in" style="max-width:760px;margin:2rem auto 0;display:flex;flex-wrap:wrap;gap:2rem;justify-content:center;font-size:.9rem;color:var(--ink2)">
+      <div><strong style="color:var(--ink)">Check-in</strong> from 4:00 PM</div>
+      <div><strong style="color:var(--ink)">Check-out</strong> by 10:00 AM</div>
+      <div><strong style="color:var(--ink)">Sleeps</strong> up to 8 guests</div>
     </div>
   </div>
 </section>
