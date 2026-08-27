@@ -1,0 +1,40 @@
+{%- comment -%}
+  Measurement. Both pieces are inert unless they have something to do:
+  the beacon only renders once a token is set in src/_data/site.json, and the
+  referral tagger only touches links when the visitor came from an AI assistant.
+{%- endcomment -%}
+{%- if site.cloudflareAnalyticsToken and site.cloudflareAnalyticsToken != "" -%}
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "{{ site.cloudflareAnalyticsToken }}"}'></script>
+{%- endif -%}
+<script>
+/* Tag outbound booking links when the visitor arrived from an AI assistant, so a
+   reservation can be attributed back to the assistant that referred it. The static
+   utm_content placement is preserved; only source and medium are overridden.
+   Static UTMs remain the fallback when JS is unavailable. */
+(function () {
+  try {
+    if (!document.referrer) return;
+    var host = new URL(document.referrer).hostname.toLowerCase();
+    var assistants = {
+      "chatgpt.com": "openai",
+      "chat.openai.com": "openai",
+      "perplexity.ai": "perplexity",
+      "www.perplexity.ai": "perplexity",
+      "claude.ai": "anthropic",
+      "gemini.google.com": "google",
+      "copilot.microsoft.com": "microsoft"
+    };
+    var source = assistants[host];
+    if (!source) return;
+    var links = document.querySelectorAll('a[href*="bookeddirectly.com"]');
+    for (var i = 0; i < links.length; i++) {
+      var u = new URL(links[i].href);
+      u.searchParams.set("utm_source", source);
+      u.searchParams.set("utm_medium", "ai_assistant");
+      links[i].href = u.toString();
+    }
+  } catch (e) {
+    /* never block the page for instrumentation */
+  }
+})();
+</script>

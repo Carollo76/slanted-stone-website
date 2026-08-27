@@ -1,13 +1,23 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "slanted-stone-website",
+  "main": "worker/index.js",
   "compatibility_date": "2025-09-27",
   "observability": {
     "enabled": true
   },
+  // The worker fronts the static build purely to log AI crawler hits and
+  // AI-assistant referrals; it always falls through to ASSETS.
   "assets": {
-    "directory": "_site"
+    "directory": "_site",
+    "binding": "ASSETS"
   },
+  "analytics_engine_datasets": [
+    {
+      "binding": "CRAWLER_LOG",
+      "dataset": "slantedstone_ai_traffic"
+    }
+  ],
   "compatibility_flags": [
     "nodejs_compat"
   ]
