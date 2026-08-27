@@ -9,7 +9,7 @@
 <meta property="og:description" content="{{ description }}">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://slantedstone.com{{ page.url }}">
-<meta property="og:image" content="https://slantedstone.com/images/Hero front house.jpg">
+<meta property="og:image" content="https://slantedstone.com/images/Hero%20front%20house.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="canonical" href="https://slantedstone.com{{ page.url }}">
 <meta name="geo.region" content="US-PA">
@@ -46,6 +46,17 @@
     "@type": "WebPage",
     "@id": "https://slantedstone.com{{ page.url }}"
   }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://slantedstone.com/"},
+    {"@type": "ListItem", "position": 2, "name": "Blog", "item": "https://slantedstone.com/blog/"},
+    {"@type": "ListItem", "position": 3, "name": "{{ title }}", "item": "https://slantedstone.com{{ page.url }}"}
+  ]
 }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
