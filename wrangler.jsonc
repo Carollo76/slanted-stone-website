@@ -10,7 +10,20 @@
   // AI-assistant referrals; it always falls through to ASSETS.
   "assets": {
     "directory": "_site",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    // Static assets are served WITHOUT invoking the worker unless a route is
+    // listed here. Every URL on this site is a static asset, so without this the
+    // crawler logging would never run. Scoped to HTML and agent-facing files so
+    // the worker is not invoked for 32MB of images.
+    "run_worker_first": [
+      "/",
+      "/blog/*",
+      "/privacy/*",
+      "/llms.txt",
+      "/robots.txt",
+      "/sitemap.xml",
+      "/feed.xml"
+    ]
   },
   "analytics_engine_datasets": [
     {
