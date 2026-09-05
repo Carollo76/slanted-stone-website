@@ -37,42 +37,124 @@ jobs:
           MONTH="${{ steps.date.outputs.month }}"
           YEAR="${{ steps.date.outputs.year }}"
           DATE="${{ steps.date.outputs.date }}"
-          MONTH_LOWER="${{ steps.date.outputs.month_lower }}"
+          MONTH_NUM="${{ steps.date.outputs.month_num }}"
 
-          SLUG="${MONTH_LOWER}-${YEAR}-pocono-pines-guide"
+          # --- SEO editorial calendar (12 months, seasonally aligned) ----------
+          # One booking-intent target per month, indexed Jan=0 .. Dec=11, so each
+          # post publishes IN its season (winter content in winter, fall foliage
+          # in October, etc.). Most targets are fully evergreen/year-round; only a
+          # few lean seasonal, spread across ALL four seasons — the property is a
+          # year-round getaway, not a winter one. Year over year a target refreshes
+          # its own canonical post (good for SEO), not a thin duplicate.
+          #            Jan       Feb        Mar         Apr     May      Jun       Jul       Aug      Sep        Oct      Nov       Dec
+          SLUGS=(
+            "poconos-winter-getaway-hot-tub"
+            "romantic-poconos-getaway-cabin"
+            "cabins-near-camelback-mountain"
+            "poconos-cabin-with-sauna"
+            "large-group-cabin-rentals-poconos"
+            "cabins-near-kalahari-waterpark"
+            "cabins-near-pocono-raceway"
+            "poconos-summer-getaway-cabin"
+            "things-to-do-near-pocono-pines"
+            "poconos-fall-foliage-getaway-cabin"
+            "pocono-pines-vacation-rental-sleeps-8"
+            "poconos-cabin-with-game-room"
+          )
+          KEYWORDS=(
+            "Poconos winter getaway with a hot tub"
+            "romantic Poconos getaway cabin"
+            "cabins near Camelback Mountain"
+            "Poconos cabin with a sauna"
+            "large group cabin rentals in the Poconos"
+            "cabins near Kalahari Waterpark"
+            "cabins near Pocono Raceway"
+            "Poconos summer getaway cabin"
+            "things to do near Pocono Pines"
+            "Poconos fall foliage getaway"
+            "Pocono Pines vacation rental that sleeps 8"
+            "Poconos cabin with a game room"
+          )
+          TITLES=(
+            "Poconos Winter Getaway: A Cabin With a Hot Tub and Sauna"
+            "A Romantic Poconos Getaway: Secluded Cabin With a Sauna and Hot Tub"
+            "Cabins Near Camelback Mountain: Skiing, Waterparks and Year-Round Fun"
+            "Poconos Cabin With a Sauna: The Finnish Barrel Sauna at Slanted Stone"
+            "Large Group Cabin Rentals in the Poconos (Sleeps 8+)"
+            "Where to Stay Near Kalahari Waterpark: A Pocono Cabin That Sleeps 8"
+            "Best Cabins Near Pocono Raceway for Race Weekend"
+            "A Poconos Summer Getaway: Cabin Near the Lakes With a Hot Tub and Sauna"
+            "Things to Do Near Pocono Pines: A Local Guide for Your Stay"
+            "Poconos Fall Foliage Getaway: A Cozy Cabin in Pocono Pines"
+            "Pocono Pines Vacation Rental That Sleeps 8"
+            "Poconos Cabin With a Game Room: Inside the Slanted Stone Game Loft"
+          )
+          DESCRIPTIONS=(
+            "Plan a cozy Poconos winter getaway at Slanted Stone Chalet, with a hot tub, Finnish sauna, firepit, and forest views minutes from Camelback Mountain."
+            "Plan a romantic Poconos getaway at Slanted Stone Chalet, a secluded Pocono Pines cabin with a Finnish sauna, hot tub, firepit, and forest views."
+            "Visiting Camelback Mountain? Slanted Stone Chalet is a luxury cabin 20 minutes away with a hot tub and Finnish sauna, great for ski season and summer alike."
+            "Searching for a Poconos cabin with a sauna? Tour the authentic Finnish barrel sauna at Slanted Stone Chalet in Pocono Pines, and book your stay direct."
+            "Need a big Poconos cabin for a group? Slanted Stone Chalet sleeps 8 across 4 bedrooms in Pocono Pines, with a game loft, hot tub, and Finnish sauna."
+            "Planning a Kalahari Waterpark trip? Slanted Stone Chalet is a luxury Pocono cabin just 14 minutes away that sleeps 8, ideal for families and groups."
+            "Heading to Pocono Raceway? Stay 11 minutes from the track at Slanted Stone Chalet, a luxury cabin that sleeps 8 with a hot tub, sauna, and firepit."
+            "Plan a Poconos summer getaway at Slanted Stone Chalet, a Pocono Pines cabin near Bradys Lake and Kalahari with a hot tub, sauna, and firepit. Sleeps 8."
+            "From Kalahari to Camelback to Tobyhanna State Park, here are the best things to do near Pocono Pines, plus where to stay at Slanted Stone Chalet."
+            "See peak fall foliage from Slanted Stone Chalet, a Pocono Pines cabin with forest views, a hot tub, Finnish sauna, and firepit. Sleeps 8. Book direct."
+            "A 2,900 sq ft Pocono Pines vacation rental that sleeps 8 across 4 bedrooms, with a hot tub, Finnish sauna, game loft, and gourmet kitchen. Book direct."
+            "Rainy-day plans sorted. Slanted Stone Chalet is a Poconos cabin with a game loft and shuffleboard, plus a Finnish sauna, hot tub, and firepit."
+          )
+          FOCI=(
+            "Sell the winter mood: hot tub and sauna in the snow, firepit s'mores, proximity to Camelback skiing, and the cozy great room. Evocative and seasonal."
+            "Target couples: seclusion, the sauna and hot tub, firepit evenings, and forest views. Couples can book the whole cabin for a private retreat any time of year."
+            "Frame Camelback as a year-round destination: skiing and snow-tubing in winter, Camelbeach waterpark and the mountain coaster in summer. The 20-minute drive, plus sauna and hot tub for recovery. Do not make it ski-only."
+            "Center on the authentic Finnish barrel sauna and why a sauna elevates a Poconos stay any time of year: the wellness ritual, contrast with the hot tub and fresh mountain air, and who loves it."
+            "Speak to groups and families needing space: four bedrooms, 2,900 sq ft, the game loft, a gourmet kitchen for group meals, and comfortable common space for eight. Great for reunions and celebrations year-round."
+            "Help a family planning a Kalahari Waterpark trip: the 14-minute drive, why a cabin that sleeps 8 beats a hotel, and the amenities back at the cabin. Note Kalahari is indoor and open year-round."
+            "Target race-weekend visitors to Pocono Raceway: the 11-minute proximity, why a group cabin beats race-weekend hotels, and unwinding in the hot tub after a day at the track."
+            "Sell summer in the Poconos: Bradys Lake 12 minutes away, Kalahari, hiking at Tobyhanna State Park, plus firepit nights and the hot tub under the stars. Active days, relaxed evenings."
+            "A genuinely useful, year-round area guide covering nearby attractions with drive times, framed for someone deciding where to stay, funnelling naturally toward booking the cabin."
+            "Fall in the Poconos: peak foliage timing in early-to-mid October, scenic drives and hikes at Tobyhanna and the Delaware Water Gap, forest views from the cabin, and the sauna and firepit in crisp air."
+            "A clear property overview optimized for the head term: walk through the four bedrooms, the amenities, and who the cabin suits (great for holiday gatherings), with a strong booking call to action."
+            "Target families and groups wanting indoor fun, great for holiday gatherings: the game loft with shuffleboard, cozy indoor time, and how it rounds out a stay alongside the sauna and hot tub."
+          )
+          N=${#SLUGS[@]}
+          IDX=$(( (10#${MONTH_NUM} - 1) % N ))
+          SLUG="${SLUGS[$IDX]}"
+          KEYWORD="${KEYWORDS[$IDX]}"
+          TITLE="${TITLES[$IDX]}"
+          DESCRIPTION="${DESCRIPTIONS[$IDX]}"
+          FOCUS="${FOCI[$IDX]}"
           FILEPATH="src/blog/posts/${SLUG}.md"
+          echo "Target keyword: ${KEYWORD}  ->  ${SLUG}"
 
-          PROMPT="You are a blog writer for Slanted Stone Chalet, a luxury vacation rental in Pocono Pines, PA. Write a monthly local guide blog post for ${MONTH} ${YEAR} (${SEASON}).
+          PROMPT="You are an SEO content writer for Slanted Stone Chalet, a luxury cabin (4 bedrooms, 3.5 baths, 2,900 sq ft, sleeps 8) in Pocono Pines, Pennsylvania. Write one blog post that ranks for and satisfies this exact search.
 
-          The blog post should cover:
-          1. Local events happening this month in the Pocono Pines / Pocono Mountains area
-          2. Seasonal outdoor activities (hiking, skiing, swimming, etc. depending on season)
-          3. Local restaurant or business recommendations
-          4. Any festivals, markets, or community events
-          5. A brief mention of what makes the chalet great this time of year (tie it to the season naturally)
+          TARGET KEYWORD (the phrase a guest types into Google): \"${KEYWORD}\"
+          ANGLE / FOCUS: ${FOCUS}
 
-          Nearby attractions to reference (with drive times from the chalet):
-          - Pocono Raceway (11 min)
-          - Bradys Lake (12 min)
-          - Kalahari Waterpark (14 min)
-          - Tobyhanna State Park (15 min)
-          - Camelback Mountain (20 min)
-          - Mount Airy Casino (20 min)
-          - Delaware Water Gap (30 min)
+          Property facts you may draw on:
+          - Location: Pocono Pines, PA, in the Pocono Mountains
+          - Amenities: Finnish barrel sauna, hot tub, game loft with shuffleboard, stone firepit with a s'mores station, ski lift chair swing, gourmet kitchen, forest views from every window
+          - Sleeps 8 across 4 bedrooms; 3.5 baths; 2,900 sq ft
+          - Nearby (drive time from the cabin): Pocono Raceway 11 min, Bradys Lake 12 min, Kalahari Waterpark 14 min, Tobyhanna State Park 15 min, Camelback Mountain 20 min, Mount Airy Casino 20 min, Delaware Water Gap 30 min
 
-          Chalet amenities: hot tub, barrel sauna, game loft with shuffleboard, stone firepit with s'mores station, ski lift chair swing, gourmet kitchen, forest views
+          Rules:
+          - Use the exact target keyword (or a very natural close variant) in the first sentence, and 3 to 5 times total across the post. Never force it; it must read naturally.
+          - Be genuinely useful and specific: real recommendations, real drive times, real detail. Not generic filler, not a sales brochure.
+          - Reference the relevant nearby attractions with their drive times where they fit the angle.
+          - Early in the post, include exactly one markdown link to the homepage using the property name as anchor text, like [Slanted Stone Chalet](/).
+          - End with a short closing call-to-action paragraph inviting the reader to book direct, mentioning discount code INSIDER10 for 10% off, linking like [book your stay](/).
+          - Warm, local-expert voice. Write like a knowledgeable host, not a marketer.
 
-          Write in a warm, helpful, local-expert tone. Not salesy. The post should genuinely help someone planning a trip to the Poconos.
-
-          Output ONLY the markdown body content (no frontmatter, no title). Do NOT include a top-level # heading — the title is rendered separately by the layout. Start the post directly with an opening paragraph, then use ## for main sections and ### for subsections. Keep it 600-900 words."
+          Output ONLY the markdown body content. No frontmatter, no title, and NO top-level # heading (the title is rendered by the layout). Start with the opening paragraph, then use ## for main sections and ### for subsections. 700 to 1000 words."
 
           RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
             -H "Content-Type: application/json" \
             -H "x-api-key: ${ANTHROPIC_API_KEY}" \
             -H "anthropic-version: 2023-06-01" \
             -d "{
-              \"model\": \"claude-sonnet-4-20250514\",
-              \"max_tokens\": 2000,
+              \"model\": \"claude-sonnet-4-6\",
+              \"max_tokens\": 2500,
               \"messages\": [{\"role\": \"user\", \"content\": $(echo "$PROMPT" | jq -Rs .)}]
             }")
 
@@ -84,8 +166,7 @@ jobs:
             exit 1
           fi
 
-          TITLE="${MONTH} ${YEAR} in Pocono Pines: Your Local Guide to ${SEASON} in the Poconos"
-          DESCRIPTION="Your guide to ${MONTH} in the Poconos — events, activities, dining, and seasonal highlights near Pocono Pines."
+          # TITLE and DESCRIPTION were set from the keyword target above.
 
           cat > "$FILEPATH" << FRONTMATTER
           ---

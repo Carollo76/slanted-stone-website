@@ -225,7 +225,6 @@ new scenery when it pans). The prompt MUST:
     (e.g. "existing flames in the firebox flicker"). If no lit fire is visible,
     do not mention fire, flame, embers, or "warm glow" at all — the image-to-video
     model will hallucinate a fire onto a coffee table, rug, or floor.
-
 EXAMPLES — how the same scene reads in a good vs bad prompt:
 
   Cinematic format (camera barely moves)
@@ -251,7 +250,6 @@ EXAMPLES — how the same scene reads in a good vs bad prompt:
        drifts at a hypnotic pace."
     ❌ BAD: "Slow rack-focus reveals the antler chandelier above."
        — "above" assumes a ceiling/chandelier the model must invent.
-
 Captions should feel like a human host, not a marketing bot.
 
 Output EXACTLY this JSON, nothing else:

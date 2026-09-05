@@ -20,7 +20,9 @@ jobs:
       - name: Fetch Search Console data
         id: report
         run: |
-          TOKEN=$(gcloud auth print-access-token)
+          # Search Console API needs the webmasters scope; the default ADC
+          # token is cloud-platform-only and returns empty results silently.
+          TOKEN=$(gcloud auth print-access-token --scopes="https://www.googleapis.com/auth/webmasters.readonly")
           SITE="sc-domain:slantedstone.com"
           ENCODED_SITE=$(echo -n "$SITE" | jq -sRr @uri)
 
