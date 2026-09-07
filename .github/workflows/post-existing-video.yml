@@ -139,7 +139,7 @@ jobs:
             --arg label "${{ inputs.label }}" \
             '{
               "blocks": [
-                {"type": "header", "text": {"type": "plain_text", "text": "Premium Video Posted"}},
+                {"type": "header", "text": {"type": "plain_text", "text": "Video Posted"}},
                 {"type": "section", "text": {"type": "mrkdwn", "text": ("*Label:* " + $label + "\n*Video:* " + $video)}},
                 {"type": "divider"},
                 {"type": "section", "text": {"type": "mrkdwn", "text": ("*Facebook (auto-posted):*\n" + $fb)}},
