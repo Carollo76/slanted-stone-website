@@ -24,6 +24,7 @@ posting steps.
 Required env vars:
     REPLICATE_API_TOKEN   - Replicate API token
     ANTHROPIC_API_KEY     - For caption generation via Claude
+    ANTHROPIC_MODEL       - Optional Claude model override (default: claude-fable-5)
     GITHUB_OUTPUT         - Set automatically by GitHub Actions
 """
 
@@ -263,6 +264,7 @@ Output EXACTLY this JSON, nothing else:
 
 def generate_captions(ctx: dict, rotation: dict, api_key: str) -> dict:
     fmt = rotation["format"]
+    anthropic_model = os.environ.get("ANTHROPIC_MODEL", "claude-fable-5")
     prompt = CAPTION_PROMPT_TEMPLATE.format(
         day=ctx["day"], month=ctx["month"], date=ctx["date"].split("-")[-1],
         year=ctx["year"], season=ctx["season"],
@@ -272,7 +274,7 @@ def generate_captions(ctx: dict, rotation: dict, api_key: str) -> dict:
     )
 
     body = json.dumps({
-        "model": "claude-fable-5",
+        "model": anthropic_model,
         "max_tokens": 1024,
         "messages": [{"role": "user", "content": prompt}],
     }).encode()

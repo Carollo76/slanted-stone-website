@@ -51,6 +51,10 @@ jobs:
           TRACK="${{ steps.video.outputs.audio_track }}"
           DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 /tmp/video.mp4 | cut -d. -f1)
           echo "Video duration: ${DURATION}s"
+          if ! [[ "$DURATION" =~ ^[0-9]+$ ]] || [ "$DURATION" -lt 2 ]; then
+            echo "Invalid video duration from ffprobe: '$DURATION' (expected integer >= 2s)"
+            exit 1
+          fi
 
           if [ -n "$TRACK" ] && [ -f "$TRACK" ]; then
             # Real music track from audio/<mood>/. Loop to video duration
@@ -124,9 +128,9 @@ jobs:
             '{fb_caption:$fb, ig_caption:$ig, gbp_caption:$gbp, photo:$photo, format:$format, model:$model}' \
             > /tmp/meta.json
 
-          npx --yes wrangler r2 object put "slanted-stone-videos/pending/${RUN_ID}.mp4" \
+          npx wrangler@4 r2 object put "slanted-stone-videos/pending/${RUN_ID}.mp4" \
             --file=/tmp/video.mp4 --content-type=video/mp4 --remote
-          npx --yes wrangler r2 object put "slanted-stone-videos/pending/${RUN_ID}.json" \
+          npx wrangler@4 r2 object put "slanted-stone-videos/pending/${RUN_ID}.json" \
             --file=/tmp/meta.json --content-type=application/json --remote
 
       - name: Post approval card to Slack
@@ -170,9 +174,9 @@ jobs:
                 {type:"image", image_url:$image, alt_text:"Source photo"},
                 {type:"section", text:{type:"mrkdwn", text:("▶ *<" + $watch + "|Watch the generated video>*")}},
                 {type:"divider"},
-                {type:"section", text:{type:"mrkdwn", text:("*Facebook:*\n" + $fb)}},
-                {type:"section", text:{type:"mrkdwn", text:("*Instagram:*\n" + $ig)}},
-                {type:"section", text:{type:"mrkdwn", text:("*Google Business Profile (post manually after approval):*\n" + $gbp)}},
+                {type:"section", text:{type:"mrkdwn", verbatim:true, text:("*Facebook:*\n" + $fb)}},
+                {type:"section", text:{type:"mrkdwn", verbatim:true, text:("*Instagram:*\n" + $ig)}},
+                {type:"section", text:{type:"mrkdwn", verbatim:true, text:("*Google Business Profile (post manually after approval):*\n" + $gbp)}},
                 {type:"actions", elements:[
                   {type:"button", action_id:"approve_video", style:"primary", text:{type:"plain_text", text:"✅ Approve & Post", emoji:true}, value:$run},
                   {type:"button", action_id:"reject_video", style:"danger", text:{type:"plain_text", text:"🚫 Reject", emoji:true}, value:$run}
