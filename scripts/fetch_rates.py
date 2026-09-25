@@ -53,7 +53,14 @@ def fetch(api_key, url):
     req = urllib.request.Request(
         url,
         data=json.dumps(payload).encode(),
-        headers={"X-API-Key": api_key, "Content-Type": "application/json"},
+        headers={
+            "X-API-Key": api_key,
+            "Content-Type": "application/json",
+            # api.pricelabs.co sits behind Cloudflare, which 403s urllib's default
+            # "Python-urllib/x.y" User-Agent. curl works, urllib does not.
+            "User-Agent": "slantedstone-rates/1.0 (+https://slantedstone.com)",
+            "Accept": "application/json",
+        },
         method="POST",
     )
     with urllib.request.urlopen(req, timeout=60) as r:
@@ -130,11 +137,13 @@ def main():
     try:
         raw = fetch(api_key, url)
     except urllib.error.HTTPError as e:
-        sys.exit(
-            f"PriceLabs returned HTTP {e.code} for {url}. "
-            "Confirm the endpoint path against the Swagger docs at "
-            "Account Settings -> API Details, and override with PRICELABS_API_URL."
-        )
+        hint = {
+            403: "Check PRICELABS_API_KEY is the full key (40 chars) and that the "
+                 "Customer API is enabled on the account.",
+            404: "Wrong endpoint path — override with the PRICELABS_API_URL variable.",
+            401: "PRICELABS_API_KEY is not valid.",
+        }.get(e.code, "Check the endpoint path and key.")
+        sys.exit(f"PriceLabs returned HTTP {e.code} for {url}. {hint}")
     except urllib.error.URLError as e:
         sys.exit(f"Could not reach PriceLabs: {e.reason}")
 
