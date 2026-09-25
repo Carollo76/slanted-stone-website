@@ -126,7 +126,7 @@ def main():
     if not api_key:
         sys.exit("PRICELABS_API_KEY is not set")
 
-    url = os.environ.get("PRICELABS_API_URL", DEFAULT_URL)
+    url = os.environ.get("PRICELABS_API_URL") or DEFAULT_URL
     try:
         raw = fetch(api_key, url)
     except urllib.error.HTTPError as e:
