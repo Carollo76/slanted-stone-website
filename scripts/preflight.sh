@@ -54,7 +54,13 @@ echo "── Content correctness ───────────────�
 HOME=$(body "$BASE/" "GPTBot/1.0")
 echo "$HOME" | grep -q "Slanted Stone Chalet" && ok "brand name in HTML" || no "brand name missing"
 echo "$HOME" | grep -q 'id="rates"' && ok "rates block present" || no "rates block missing"
-echo "$HOME" | grep -q "Christmas &amp; New Year" && ok "season labels render" || no "season labels missing"
+ROWS=$(echo "$HOME" | grep -oE '\$[0-9]+ – \$[0-9]+' | wc -l | tr -d ' ')
+NIGHTS=$(echo "$HOME" | grep -oE '[0-9]+ nights' | wc -l | tr -d ' ')
+if [ "$ROWS" -ge 3 ] && [ "$NIGHTS" -ge 3 ]; then
+  ok "rates table renders $ROWS season rows with min-stay"
+else
+  no "rates table malformed ($ROWS price ranges, $NIGHTS min-stay cells)"
+fi
 echo "$HOME" | grep -q "aggregateRating" && no "aggregateRating present — must never be" || ok "no aggregateRating"
 echo "$HOME" | grep -q "pocono-retreat%253A" && no "stale booking slug still present" || ok "no stale booking slug"
 JSONLD=$(body "$BASE/" "$UA_BROWSER" | python3 -c '
