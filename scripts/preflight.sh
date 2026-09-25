@@ -39,7 +39,7 @@ c=$(code "$BASE/images/Hero%20front%20house.jpg")
 
 echo
 echo "── Booking CTAs resolve 200-direct ───────────────"
-LINKS=$(body "$BASE/" | grep -o 'https://www\.bookeddirectly\.com[^"]*' | sed 's/&amp;/\&/g' | sort -u)
+LINKS=$(body "$BASE/" | grep -oE 'https://[a-z0-9.-]*bookeddirectly\.[a-z]+[^"]*' | sed 's/&amp;/\&/g' | sort -u)
 [ -z "$LINKS" ] && no "no booking links found on homepage"
 while read -r u; do
   [ -z "$u" ] && continue

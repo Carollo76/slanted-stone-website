@@ -26,7 +26,7 @@
     };
     var source = assistants[host];
     if (!source) return;
-    var links = document.querySelectorAll('a[href*="bookeddirectly.com"]');
+    var links = document.querySelectorAll('a[href*="bookeddirectly"]');
     for (var i = 0; i < links.length; i++) {
       var u = new URL(links[i].href);
       u.searchParams.set("utm_source", source);
