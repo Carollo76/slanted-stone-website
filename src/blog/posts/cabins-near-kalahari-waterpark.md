@@ -16,7 +16,7 @@ Kalahari is fully indoor, which means it doesn't matter if you're coming in Febr
 
 The not-so-great news about staying *at* Kalahari is the cost per night for a suite that genuinely sleeps eight people. You're looking at a significant nightly rate, and you're confined to a hotel room when you're not in the water. There's no firepit. No sauna. No game room to retreat to at 9pm when the kids are still buzzing but everyone needs to wind down.
 
-At 2,900 square feet across four bedrooms and three and a half baths, Slanted Stone Chalet gives a group of eight actual room to breathe. You spend the afternoon at the waterpark, drive 14 minutes back through the Pocono pines, and the rest of the evening belongs to you.
+At 2,900 square feet across three bedrooms, a bunk room and three and a half baths, Slanted Stone Chalet gives a group of eight actual room to breathe. You spend the afternoon at the waterpark, drive 14 minutes back through the Pocono pines, and the rest of the evening belongs to you.
 
 ## What the Evenings Look Like Back at the Cabin
 
@@ -57,6 +57,6 @@ A few things worth knowing before you go:
 
 ## Ready to Book?
 
-If you're planning a Kalahari trip and want a cabin near Kalahari Waterpark that actually gives your whole group space to spread out, relax, and enjoy the Poconos beyond just one afternoon of slides, Slanted Stone Chalet is exactly what you're looking for. Four bedrooms, a sauna, a hot tub, a firepit, a game loft — all 14 minutes from the waterpark.
+If you're planning a Kalahari trip and want a cabin near Kalahari Waterpark that actually gives your whole group space to spread out, relax, and enjoy the Poconos beyond just one afternoon of slides, Slanted Stone Chalet is exactly what you're looking for. Three bedrooms plus a bunk room, a sauna, a hot tub, a firepit, a game loft — all 14 minutes from the waterpark.
 
 Use code **INSIDER10** at checkout for 10% off your stay, and [book your stay](/) directly to get the best available rate. We'd love to host your family.

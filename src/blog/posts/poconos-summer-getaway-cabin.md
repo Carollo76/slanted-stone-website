@@ -60,7 +60,7 @@ If you want to venture a bit further, a few options are worth knowing about:
 
 ## Who This Cabin Is Actually For
 
-A **Poconos summer getaway cabin** works best when you've got a group that wants variety — some people who want to be active, some who want to decompress, and everyone who wants good food and a fire at the end of the day. With four bedrooms and 3.5 baths sleeping eight people comfortably, Slanted Stone Chalet handles that mix well. There's enough space that you're not on top of each other, but the common areas pull everyone together when it counts.
+A **Poconos summer getaway cabin** works best when you've got a group that wants variety — some people who want to be active, some who want to decompress, and everyone who wants good food and a fire at the end of the day. With three bedrooms plus a bunk room and 3.5 baths sleeping eight people comfortably, Slanted Stone Chalet handles that mix well. There's enough space that you're not on top of each other, but the common areas pull everyone together when it counts.
 
 The Pocono Pines location specifically puts you close to water (Bradys Lake, Tobyhanna), close to the big attractions (Kalahari, Camelback), and deep enough in the trees that it feels like you've actually left.
 

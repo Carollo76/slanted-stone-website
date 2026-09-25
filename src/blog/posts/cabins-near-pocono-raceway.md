@@ -16,7 +16,7 @@ We're located in Pocono Pines, PA, just **11 minutes from Pocono Raceway's main 
 
 Let's be honest about what a typical race-weekend hotel experience looks like: overpriced rooms that were booked six months ago, a parking lot full of strangers, continental breakfast that runs out by 7:30 a.m., and nowhere comfortable to gather with your crew after the race.
 
-A private cabin changes all of that. At Slanted Stone Chalet, you get **2,900 square feet** across 4 bedrooms and 3.5 baths, sleeping up to 8 people comfortably. When you split that across a full group, you're often paying *less per person* than a pair of hotel rooms — and getting infinitely more space, privacy, and experience.
+A private cabin changes all of that. At Slanted Stone Chalet, you get **2,900 square feet** across 3 bedrooms plus a bunk room and 3.5 baths, sleeping up to 8 people comfortably. When you split that across a full group, you're often paying *less per person* than a pair of hotel rooms — and getting infinitely more space, privacy, and experience.
 
 There's a **gourmet kitchen** where you can prep race-day breakfast and pack a proper cooler without relying on overpriced speedway concessions for every meal. There's a **game loft with shuffleboard** for the pre-race evening and the post-race wind-down. And there are **forest views from every single window** — a genuine exhale after a loud, stimulating day at the track.
 

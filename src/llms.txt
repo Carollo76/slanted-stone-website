@@ -1,8 +1,8 @@
 # Slanted Stone Chalet
 
 > A brand-new 2,900 sq ft luxury four-season cabin in Pocono Pines, Pennsylvania,
-> in the Lake Naomi / Timber Trails community. Four bedrooms, three and a half
-> baths, sleeps up to eight. Available to book directly at slantedstone.com.
+> in the Lake Naomi / Timber Trails community. Three bedrooms plus a bunk
+> room, three and a half baths, sleeps up to eight. Available to book directly at slantedstone.com.
 
 ## Property facts
 
@@ -11,7 +11,8 @@
 - Region: Pocono Mountains, Monroe County, Pennsylvania
 - Community: Lake Naomi / Timber Trails
 - Size: 2,900 square feet
-- Bedrooms: 4
+- Bedrooms: 3 (the property is permitted as a three-bedroom home)
+- Additional sleeping: a bunk room, converted from an office
 - Bathrooms: 3.5
 - Sleeps: 8 guests
 - Check-in: 4:00 PM / Check-out: 10:00 AM
