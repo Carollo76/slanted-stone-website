@@ -2,8 +2,8 @@
   "updated": "2026-09-25",
   "currency": "USD",
   "source": "PriceLabs listing 200887 (uplisting)",
-  "coverage": "partial",
-  "coverageNote": "Seeded from a 102-day sample (26 Sep 2026 \u2013 5 Jan 2027). The nightly job replaces this with a rolling 365-day pull once PRICELABS_API_KEY is set.",
+  "coverage": "rolling-365",
+  "coverageNote": "Rolling 365-day pull, refreshed nightly.",
   "disclaimer": "Nightly rates before fees and taxes. Final total is shown at checkout.",
   "checkinTime": "16:00",
   "checkoutTime": "10:00",
@@ -11,40 +11,49 @@
   "highestNightly": 1291,
   "seasons": [
     {
-      "key": "fall",
-      "label": "Fall & foliage",
-      "months": "October",
-      "from": 217,
-      "to": 583,
-      "typical": 340,
+      "key": "winter",
+      "label": "Winter",
+      "months": "January \u2013 February",
+      "from": 280,
+      "to": 986,
+      "typical": 383,
       "minStay": 2
     },
     {
-      "key": "late-fall",
-      "label": "Late fall & Thanksgiving",
-      "months": "November",
+      "key": "spring",
+      "label": "Spring",
+      "months": "March \u2013 May",
+      "from": 259,
+      "to": 900,
+      "typical": 350,
+      "minStay": 2
+    },
+    {
+      "key": "summer",
+      "label": "Summer",
+      "months": "June \u2013 August",
+      "from": 317,
+      "to": 900,
+      "typical": 735,
+      "minStay": 3
+    },
+    {
+      "key": "fall",
+      "label": "Fall & foliage",
+      "months": "September \u2013 October",
+      "from": 217,
+      "to": 900,
+      "typical": 363,
+      "minStay": 2
+    },
+    {
+      "key": "late",
+      "label": "Late fall",
+      "months": "November \u2013 mid December",
       "from": 244,
       "to": 721,
       "typical": 315,
       "minStay": 2
-    },
-    {
-      "key": "early-winter",
-      "label": "Early winter",
-      "months": "1 \u2013 17 December",
-      "from": 232,
-      "to": 397,
-      "typical": 273,
-      "minStay": 2
-    },
-    {
-      "key": "holidays",
-      "label": "Christmas & New Year",
-      "months": "18 December \u2013 5 January",
-      "from": 417,
-      "to": 1291,
-      "typical": 848,
-      "minStay": 3
     }
   ]
 }
