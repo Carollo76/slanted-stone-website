@@ -14,6 +14,7 @@ PASS=0; FAIL=0
 ok(){ printf "  \033[32mPASS\033[0m  %s\n" "$1"; PASS=$((PASS+1)); }
 no(){ printf "  \033[31mFAIL\033[0m  %s\n" "$1"; FAIL=$((FAIL+1)); }
 
+UA_BROWSER="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36"
 code(){ curl -s -o /dev/null -w '%{http_code}' --max-time 20 -A "${2:-preflight}" "$1"; }
 body(){ curl -s --max-time 20 -A "${2:-preflight}" "$1"; }
 
@@ -24,13 +25,13 @@ for p in / /blog/ /privacy/ /robots.txt /sitemap.xml /llms.txt /feed.xml; do
 done
 
 # Every post listed in the sitemap must resolve.
-body "$BASE/sitemap.xml" | grep -o '<loc>[^<]*</loc>' | sed 's/<\/*loc>//g' \
-  | sed 's|https://slantedstone.com||' | while read -r p; do
-    [ -z "$p" ] && continue
-    c=$(code "$BASE$p")
-    [ "$c" = "200" ] && printf "  \033[32mPASS\033[0m  sitemap %s → 200\n" "$p" \
-                     || printf "  \033[31mFAIL\033[0m  sitemap %s → %s\n" "$p" "$c"
-  done
+SITEMAP_PATHS=$(body "$BASE/sitemap.xml" | grep -o '<loc>[^<]*</loc>' | sed 's/<\/*loc>//g' \
+  | sed 's|https://slantedstone.com||')
+while read -r p; do
+  [ -z "$p" ] && continue
+  c=$(code "$BASE$p")
+  [ "$c" = "200" ] && ok "sitemap $p → 200" || no "sitemap $p → $c"
+done <<< "$SITEMAP_PATHS"
 
 echo
 echo "── Images (must bypass worker, still serve) ──────"
@@ -56,16 +57,23 @@ echo "$HOME" | grep -q 'id="rates"' && ok "rates block present" || no "rates blo
 echo "$HOME" | grep -q "Christmas &amp; New Year" && ok "season labels render" || no "season labels missing"
 echo "$HOME" | grep -q "aggregateRating" && no "aggregateRating present — must never be" || ok "no aggregateRating"
 echo "$HOME" | grep -q "pocono-retreat%253A" && no "stale booking slug still present" || ok "no stale booking slug"
-python3 - "$BASE" <<'PY' || true
-import json,re,sys,urllib.request
-h=urllib.request.urlopen(sys.argv[1]+"/",timeout=20).read().decode()
-bad=0;tot=0
-for b in re.findall(r'<script type="application/ld\+json">(.*?)</script>',h,re.S):
-    tot+=1
+JSONLD=$(body "$BASE/" "$UA_BROWSER" | python3 -c '
+import json,re,sys
+h=sys.stdin.read()
+blocks=re.findall(r"<script type=\"application/ld\+json\">(.*?)</script>",h,re.S)
+if not blocks:
+    print("NONE"); raise SystemExit
+bad=[]
+for b in blocks:
     try: json.loads(b)
-    except Exception as e: bad+=1; print(f"  \033[31mFAIL\033[0m  JSON-LD invalid: {str(e)[:60]}")
-if not bad: print(f"  \033[32mPASS\033[0m  {tot} JSON-LD block(s) parse")
-PY
+    except Exception as e: bad.append(str(e)[:60])
+print("OK %d" % len(blocks) if not bad else "BAD " + "; ".join(bad))
+')
+case "$JSONLD" in
+  OK*) ok "${JSONLD#OK } JSON-LD block(s) parse" ;;
+  NONE) no "no JSON-LD found (blocked or missing)" ;;
+  *)   no "JSON-LD invalid: ${JSONLD#BAD }" ;;
+esac
 
 echo
 echo "── Worker cannot break a response ────────────────"
