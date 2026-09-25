@@ -1,6 +1,9 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "slanted-stone-website",
+  // Pinned so deploys do not depend on a CLOUDFLARE_ACCOUNT_ID env var being
+  // correct. Account IDs are not secret — they appear in dashboard URLs.
+  "account_id": "501bf7ea89ce447e4bedf9796715e6e2",
   "main": "worker/index.js",
   "compatibility_date": "2025-09-27",
   "observability": {
