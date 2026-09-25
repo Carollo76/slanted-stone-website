@@ -6,7 +6,7 @@ date: 2026-09-01
 tags: blog
 ---
 
-If you're searching for **things to do near Pocono Pines**, you've landed in one of the most quietly versatile pockets of the Pocono Mountains. This stretch of northeastern Pennsylvania punches well above its weight — within a half-hour of town you've got whitewater, waterparks, ski slopes, state forests, casinos, and one of NASCAR's fastest tracks. We're the hosts behind [Slanted Stone Chalet](/), a four-bedroom luxury cabin that sits right in the middle of all of it, and we've put together this honest guide to help you plan your trip — whether you're booking with us or not.
+If you're searching for **things to do near Pocono Pines**, you've landed in one of the most quietly versatile pockets of the Pocono Mountains. This stretch of northeastern Pennsylvania punches well above its weight — within a half-hour of town you've got whitewater, waterparks, ski slopes, state forests, casinos, and one of NASCAR's fastest tracks. We're the hosts behind [Slanted Stone Chalet](/), a three-bedroom luxury cabin with a bunk room that sits right in the middle of all of it, and we've put together this honest guide to help you plan your trip — whether you're booking with us or not.
 
 ---
 
@@ -58,4 +58,4 @@ And honestly? Some of the best "things to do near Pocono Pines" are right at the
 
 Whether you're coming for the slopes in January or the waterways in July, the Pocono Pines area rewards visitors who do a little planning. Mix one or two big outings with some slower mornings, and you'll leave feeling like you actually got away.
 
-If you'd like to make Slanted Stone Chalet your home base for all of it — 2,900 square feet, four bedrooms, sleeping eight, with every amenity you'd want after a full day out — we'd love to have you. Use code **INSIDER10** at checkout for 10% off your stay and [book your stay](/) directly through our site.
+If you'd like to make Slanted Stone Chalet your home base for all of it — 2,900 square feet, three bedrooms plus a bunk room, sleeping eight, with every amenity you'd want after a full day out — we'd love to have you. Use code **INSIDER10** at checkout for 10% off your stay and [book your stay](/) directly through our site.
