@@ -1,0 +1,22 @@
+{
+  "updated": "2026-09-25",
+  "note": "First-party testimonials only — collected directly from guests with explicit publication permission. Do NOT paste Airbnb or Google review text here: Airbnb's terms restrict copying their content, and Google prohibits aggregating ratings from other sites. There is deliberately no rating field; see the audit report, finding 04.",
+  "items": [
+    {
+      "id": "example-remove-me",
+      "approved": false,
+      "quote": "Replace this with a real guest's words, verbatim. Two or three sentences is plenty.",
+      "guestFirstName": "Example",
+      "guestLocation": "City, ST",
+      "stayMonth": "2026-08",
+      "partyType": "family",
+      "source": "first-party",
+      "permission": {
+        "granted": false,
+        "grantedAt": null,
+        "scope": "website",
+        "wording": "You may publish this on slantedstone.com with my first name and the month I stayed."
+      }
+    }
+  ]
+}

@@ -512,6 +512,24 @@ footer ul a:hover{color:var(--gold2)}
       <div class="eyebrow">Guest Reviews</div>
       <h2 class="section-heading">What Our Guests Say</h2>
     </div>
+    {%- assign approved = testimonials.items | where: "approved", true -%}
+    {%- if approved.size > 0 %}
+    <!-- Server-rendered so crawlers and AI assistants can read them. Deliberately
+         no rating markup: Google's self-serving rule makes this page ineligible
+         for star treatment regardless of source. See audit finding 04. -->
+    <div class="fade-in" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;max-width:1000px;margin:0 auto 3rem">
+      {%- for t in approved %}
+      <figure style="background:var(--white);padding:2rem 2rem 1.75rem;border-radius:4px;margin:0;display:flex;flex-direction:column;gap:1.25rem">
+        <blockquote style="margin:0;font-family:var(--serif);font-size:1.1rem;line-height:1.6;color:var(--ink)">&ldquo;{{ t.quote }}&rdquo;</blockquote>
+        <figcaption style="font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">
+          {{ t.guestFirstName }}{% if t.guestLocation %} &middot; {{ t.guestLocation }}{% endif %}
+          <span style="display:block;margin-top:.3rem;letter-spacing:.04em;text-transform:none;color:var(--gold)">Stayed {{ t.stayMonth | monthLabel }}</span>
+        </figcaption>
+      </figure>
+      {%- endfor %}
+    </div>
+    {%- endif %}
+
     <script src="https://elfsightcdn.com/platform.js" async></script>
     <div class="elfsight-app-9e2a2e9b-dfbd-4afc-87b4-bc69a037bcf1" data-elfsight-app-lazy></div>
   </div>
