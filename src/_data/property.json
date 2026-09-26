@@ -1,0 +1,34 @@
+{
+  "_comment": "CANONICAL property facts. Everything that states a number about the chalet reads from here: the JSON-LD schema, and the blog generator's prompt. Change a value here and it propagates — do not hardcode these anywhere else.",
+  "name": "Slanted Stone Chalet",
+  "bedrooms": 3,
+  "bedroomsNote": "Permitted as a three-bedroom home. The fourth room is a converted office used as a kids' bunk room and must NOT be described as a bedroom.",
+  "bunkRoom": true,
+  "bathrooms": 3.5,
+  "sleeps": 8,
+  "squareFeet": 2900,
+  "city": "Pocono Pines",
+  "state": "PA",
+  "region": "Pocono Mountains",
+  "amenities": [
+    "Finnish barrel sauna",
+    "hot tub",
+    "game loft with shuffleboard",
+    "stone firepit with a s'mores station",
+    "ski lift chair swing",
+    "gourmet kitchen",
+    "forest views from every window"
+  ],
+  "driveTimes": [
+    { "place": "Pocono Raceway", "minutes": 11 },
+    { "place": "Bradys Lake", "minutes": 12 },
+    { "place": "Kalahari Waterpark", "minutes": 14 },
+    { "place": "Tobyhanna State Park", "minutes": 15 },
+    { "place": "Camelback Mountain", "minutes": 20 },
+    { "place": "Mount Airy Casino", "minutes": 20 },
+    { "place": "Delaware Water Gap", "minutes": 30 }
+  ],
+  "unknown": [
+    "petsAllowed — not stated anywhere; do not claim either way"
+  ]
+}

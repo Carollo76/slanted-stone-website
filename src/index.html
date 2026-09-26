@@ -55,7 +55,7 @@
   "currenciesAccepted": "USD",
   "checkinTime": "16:00",
   "checkoutTime": "10:00",
-  "numberOfRooms": 3,
+  "numberOfRooms": {{ property.bedrooms }},
   "image": [
     "https://slantedstone.com/images/Hero%20front%20house.jpg",
     "https://slantedstone.com/images/Hero%20Inside%20sauna.jpg",
@@ -79,17 +79,17 @@
     "@type": "Accommodation",
     "name": "Slanted Stone Chalet",
     "additionalType": "https://schema.org/House",
-    "numberOfBedrooms": 3,
-    "numberOfBathroomsTotal": 3.5,
-    "numberOfRooms": 3,
+    "numberOfBedrooms": {{ property.bedrooms }},
+    "numberOfBathroomsTotal": {{ property.bathrooms }},
+    "numberOfRooms": {{ property.bedrooms }},
     "floorSize": {
       "@type": "QuantitativeValue",
-      "value": 2900,
+      "value": {{ property.squareFeet }},
       "unitCode": "FTK"
     },
     "occupancy": {
       "@type": "QuantitativeValue",
-      "maxValue": 8,
+      "maxValue": {{ property.sleeps }},
       "unitText": "guests"
     },
     "amenityFeature": [
