@@ -194,6 +194,7 @@ jobs:
           description: "${DESCRIPTION}"
           date: ${DATE}
           tags: blog
+          evergreen: true
           ---
 
           FRONTMATTER
