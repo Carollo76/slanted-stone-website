@@ -50,6 +50,26 @@ while read -r u; do
 done <<< "$LINKS"
 
 echo
+echo "── Retired URLs still 301 ────────────────────────"
+# These redirects live in worker code, not _redirects, because /blog/* runs the
+# worker first and Cloudflare ignores _redirects for worker-served requests.
+while read -r old new; do
+  [ -z "$old" ] && continue
+  CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$BASE$old")
+  DEST=$(curl -s -o /dev/null -w '%{redirect_url}' --max-time 20 "$BASE$old" | sed "s|$BASE||")
+  if [ "$CODE" = "301" ] && [ "$DEST" = "$new" ]; then
+    ok "$(basename "$old") → 301 $new"
+  else
+    no "$(basename "$old") → $CODE $DEST (expected 301 $new)"
+  fi
+done <<'RETIRED'
+/blog/posts/spring-2026-pocono-pines-guide/ /blog/posts/spring-in-pocono-pines/
+/blog/posts/april-2026-pocono-pines-guide/ /blog/posts/spring-in-pocono-pines/
+/blog/posts/may-2026-pocono-pines-guide/ /blog/posts/spring-in-pocono-pines/
+/blog/posts/june-2026-pocono-pines-guide/ /blog/posts/summer-in-pocono-pines/
+RETIRED
+
+echo
 echo "── Content correctness ───────────────────────────"
 HOME=$(body "$BASE/" "GPTBot/1.0")
 echo "$HOME" | grep -q "Slanted Stone Chalet" && ok "brand name in HTML" || no "brand name missing"

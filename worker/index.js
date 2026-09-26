@@ -60,8 +60,28 @@ function identifyReferrer(referer) {
   return AI_REFERRERS[host] || null;
 }
 
+// Retired dated roundups → their evergreen replacements. These must live here
+// rather than in a _redirects file: /blog/* is in run_worker_first, so the worker
+// serves those paths via env.ASSETS.fetch(), and Cloudflare does not apply
+// _redirects to requests the worker handles. A _redirects entry would be ignored
+// silently and these URLs would 404.
+const RETIRED = {
+  "/blog/posts/spring-2026-pocono-pines-guide/": "/blog/posts/spring-in-pocono-pines/",
+  "/blog/posts/april-2026-pocono-pines-guide/": "/blog/posts/spring-in-pocono-pines/",
+  "/blog/posts/may-2026-pocono-pines-guide/": "/blog/posts/spring-in-pocono-pines/",
+  "/blog/posts/june-2026-pocono-pines-guide/": "/blog/posts/summer-in-pocono-pines/",
+};
+
 export default {
   async fetch(request, env, ctx) {
+    const { pathname } = new URL(request.url);
+    // Tolerate a missing trailing slash so both forms redirect.
+    const target =
+      RETIRED[pathname] || RETIRED[pathname + "/"] || null;
+    if (target) {
+      return Response.redirect(new URL(target, request.url).toString(), 301);
+    }
+
     const response = env.ASSETS.fetch(request);
 
     // Analytics Engine may be unbound (local dev, or before the dataset exists).
