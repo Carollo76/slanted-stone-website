@@ -58,5 +58,22 @@
   "unknown": [
     "(nothing currently unknown \u2014 add here rather than guessing)"
   ],
-  "petsAllowed": false
+  "petsAllowed": false,
+  "weddingVenues": [
+    {
+      "place": "Stroudsmoor Country Inn",
+      "minutes": 28,
+      "verified": "Google Maps, 28 Sep 2026"
+    },
+    {
+      "place": "Shawnee Inn",
+      "minutes": 32,
+      "verified": "Google Maps, 28 Sep 2026"
+    },
+    {
+      "place": "Skytop Lodge",
+      "minutes": 34,
+      "verified": "Google Maps, 28 Sep 2026"
+    }
+  ]
 }
