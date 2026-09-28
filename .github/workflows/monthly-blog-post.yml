@@ -140,6 +140,7 @@ jobs:
           AMENITIES=$(jq -r '.amenities | join(", ")' $P)
           DRIVE_TIMES=$(jq -r '[.driveTimes[] | "\(.place) \(.minutes) min"] | join(", ")' $P)
           UNKNOWNS=$(jq -r '.unknown | join("; ")' $P)
+          PETS=$(jq -r 'if .petsAllowed then "Pets are welcome." else "The property does NOT accept pets. Never describe it as pet friendly." end' $P)
 
           PROMPT="You are an SEO content writer for Slanted Stone Chalet, a luxury cabin in Pocono Pines, Pennsylvania. Write one blog post that ranks for and satisfies this exact search.
 
@@ -154,6 +155,7 @@ jobs:
           - Sleeps ${SLEEPS} across ${BEDROOMS} bedrooms; ${BATHROOMS} baths; ${SQFT} sq ft
           - IMPORTANT: ${BEDROOM_NOTE}
           - Nearby (drive time from the cabin): ${DRIVE_TIMES}
+          - Pets: ${PETS}
           - Not known, never claim either way: ${UNKNOWNS}
 
           Rules:

@@ -56,6 +56,7 @@
   },
   "priceRange": "{% if rates %}${{ rates.lowestNightly }}-${{ rates.highestNightly }}{% else %}$275-$1500{% endif %}",
   "currenciesAccepted": "USD",
+  "petsAllowed": {{ property.petsAllowed }},
   "checkinTime": "16:00",
   "checkoutTime": "10:00",
   "numberOfRooms": {{ property.bedrooms }},
