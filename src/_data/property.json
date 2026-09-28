@@ -37,12 +37,18 @@
       "minutes": 15
     },
     {
+      "place": "Mount Airy Casino",
+      "minutes": 19,
+      "verified": "Google Maps, 28 Sep 2026"
+    },
+    {
       "place": "Camelback Mountain",
       "minutes": 20
     },
     {
-      "place": "Mount Airy Casino",
-      "minutes": 20
+      "place": "Jack Frost / Big Boulder",
+      "minutes": 20,
+      "verified": "Google Maps, 28 Sep 2026"
     },
     {
       "place": "Delaware Water Gap",
