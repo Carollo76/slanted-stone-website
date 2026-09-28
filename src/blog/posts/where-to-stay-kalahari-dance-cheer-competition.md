@@ -48,7 +48,7 @@ For competition weekends specifically:
 
 Kalahari's Pocono convention centre runs 215,000 square feet across 33 meeting spaces, and it hosts national-level cheer and dance events through the year — among them Premier Kalahari Nationals, Journey Nationals, Beyond the Stars, The Masters and The FINALE.
 
-They fall across the calendar rather than in one season, including deep winter, which is worth knowing: a January or March competition weekend is a quiet time in the Poconos generally, and there is more availability nearby than you might expect at a resort that is fully booked.
+They fall across the calendar rather than clustering in one season, which is worth knowing if you are planning ahead: a spring or summer competition weekend sits in a busier stretch of the Poconos calendar, so nearby accommodation goes earlier than you might expect.
 
 *We are not affiliated with any of these events or with Kalahari — we are simply fourteen minutes away.*
 
