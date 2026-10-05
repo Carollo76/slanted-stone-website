@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-04",
+  "updated": "2026-10-05",
   "currency": "USD",
   "source": "PriceLabs listing 200887 (uplisting)",
   "coverage": "rolling-365",
@@ -8,31 +8,31 @@
   "checkinTime": "16:00",
   "checkoutTime": "10:00",
   "lowestNightly": 200,
-  "highestNightly": 1151,
+  "highestNightly": 1148,
   "seasons": [
     {
       "key": "winter",
       "label": "Winter",
       "months": "January \u2013 February",
       "from": 280,
-      "to": 910,
-      "typical": 387,
+      "to": 901,
+      "typical": 388,
       "minStay": 2
     },
     {
       "key": "spring",
       "label": "Spring",
       "months": "March \u2013 May",
-      "from": 257,
+      "from": 255,
       "to": 900,
-      "typical": 347,
+      "typical": 344,
       "minStay": 2
     },
     {
       "key": "summer",
       "label": "Summer",
       "months": "June \u2013 August",
-      "from": 320,
+      "from": 316,
       "to": 900,
       "typical": 724,
       "minStay": 2
@@ -51,8 +51,8 @@
       "label": "Late fall",
       "months": "November \u2013 mid December",
       "from": 200,
-      "to": 822,
-      "typical": 320,
+      "to": 824,
+      "typical": 319,
       "minStay": 2
     }
   ]
