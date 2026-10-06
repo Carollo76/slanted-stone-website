@@ -1,8 +1,39 @@
 {%- comment -%}
-  Measurement. Both pieces are inert unless they have something to do:
-  the beacon only renders once a token is set in src/_data/site.json, and the
-  referral tagger only touches links when the visitor came from an AI assistant.
+  Measurement. Every piece is inert unless it has something to do: the GA4 tag
+  and the Cloudflare beacon each render only once their id/token is set in
+  src/_data/site.json, and the referral tagger only touches links when the
+  visitor came from an AI assistant.
+
+  CROSS-DOMAIN, and why there is no `linker` here. Both this site and the
+  StayDirect booking domain send to the SAME measurement ID, so they are one web
+  data stream — the prerequisite is already met. But linking cannot be completed
+  from this page:
+    1. For raw gtag.js, Google directs GA4 cross-domain to the Admin UI; `linker`
+       is a GTM "fields to set" mechanism, not a supported gtag config field.
+    2. Linking is a two-way handshake, and the booking domain's own config —
+       rendered by StayDirect, not editable by us — lists only
+       'slantedstone.bookeddirectly.host'. It never names slantedstone.com, so a
+       page-level linker on our side has nothing to shake hands with.
+  The fix is one setting on the shared stream:
+    Admin > Data streams > (this stream) > Configure tag settings >
+    Configure your domains  ->  add BOTH slantedstone.com
+                                and slantedstone.bookeddirectly.host
+  That is what appends _gl across the hop. Until it is set, every booking-site
+  arrival is attributed to a referral from this site and the real source (an
+  assistant, a search) is lost — which is exactly the question we cannot answer
+  about the two direct bookings of 2 Oct 2026.
 {%- endcomment -%}
+{%- if site.ga4MeasurementId and site.ga4MeasurementId != "" -%}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ site.ga4MeasurementId }}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  /* Cross-domain to the booking domain is an Admin UI setting, not a tag
+     setting. See the build-time comment at the top of this file. */
+  gtag('config', '{{ site.ga4MeasurementId }}');
+</script>
+{%- endif -%}
 {%- if site.cloudflareAnalyticsToken and site.cloudflareAnalyticsToken != "" -%}
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "{{ site.cloudflareAnalyticsToken }}"}'></script>
 {%- endif -%}
