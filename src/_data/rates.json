@@ -15,8 +15,8 @@
       "label": "Winter",
       "months": "January \u2013 February",
       "from": 254,
-      "to": 905,
-      "typical": 380,
+      "to": 900,
+      "typical": 379,
       "minStay": 2
     },
     {
@@ -35,7 +35,7 @@
       "from": 320,
       "to": 900,
       "typical": 729,
-      "minStay": 2
+      "minStay": 4
     },
     {
       "key": "fall",
@@ -52,8 +52,17 @@
       "months": "November \u2013 mid December",
       "from": 201,
       "to": 778,
-      "typical": 308,
+      "typical": 304,
       "minStay": 2
+    },
+    {
+      "key": "holidays",
+      "label": "Christmas & New Year",
+      "months": "18 December \u2013 2 January",
+      "from": 418,
+      "to": 1129,
+      "typical": 815,
+      "minStay": 3
     }
   ]
 }
