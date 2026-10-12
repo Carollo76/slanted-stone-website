@@ -1,10 +1,30 @@
 name: Share Blog Post to Pinterest
 
+# DORMANT — this workflow does not run automatically, on purpose.
+#
+# It has never once succeeded: 20 runs between 2026-04-08 and 2026-10-06, all
+# failures, zero pins. The cause was not an expired token. Pinterest grants new
+# apps TRIAL access, where pins created through the API are sandbox objects
+# visible only to their creator. Public pins need STANDARD access, which
+# requires submitting a video of the app driving the OAuth flow. That
+# submission was made and not approved, so the app never had the access this
+# workflow depends on, and no credential could have made it work.
+#
+# The push trigger is removed so a blog post no longer produces a guaranteed
+# failed run. Monthly posts are pinned by hand instead, which takes about two
+# minutes and is public immediately. The site already serves og:title,
+# og:description and og:image, so a manually pinned URL builds a correct Rich
+# Pin with no further work.
+#
+# The token-minting step and scripts/pinterest_auth.py are kept and are
+# correct: they are what this needs IF Standard access is ever granted, or if
+# posting is routed through a tool that already holds it. Re-enable by
+# restoring the push trigger below.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'src/blog/posts/*.md'
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - 'src/blog/posts/*.md'
   workflow_dispatch:
     inputs:
       blog_post:
