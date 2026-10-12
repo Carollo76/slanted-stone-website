@@ -28,14 +28,36 @@ DEFAULT_URL = "https://api.pricelabs.co/v1/listing_prices"
 OUT = "src/_data/rates.json"
 HORIZON_DAYS = 365
 
-# (label, months blurb, start month, end month) — end is inclusive, wraps at year end.
+# Seasons are bucketed by (month, day), not by month alone.
+#
+# They used to be month ranges ending at ("Late fall", ..., 11, 11) — so month 12
+# belonged to no season and December never appeared in the published table at
+# all, while the "Late fall" label claimed to cover "mid December". The gap sat
+# over the most valuable inventory of the year: the nights of 18 Dec – 2 Jan ask
+# far more than any other season and carry a 3-night minimum over Christmas and
+# New Year. A guest reading the old table saw "typical $310, 2 nights".
+#
+# Order here is the order rendered.
 SEASONS = [
-    ("Winter", "January – February", 1, 2),
-    ("Spring", "March – May", 3, 5),
-    ("Summer", "June – August", 6, 8),
-    ("Fall & foliage", "September – October", 9, 10),
-    ("Late fall", "November – mid December", 11, 11),
+    ("winter", "Winter", "January – February", (1, 3), (2, 29)),
+    ("spring", "Spring", "March – May", (3, 1), (5, 31)),
+    ("summer", "Summer", "June – August", (6, 1), (8, 31)),
+    ("fall", "Fall & foliage", "September – October", (9, 1), (10, 31)),
+    ("late", "Late fall", "November – mid December", (11, 1), (12, 17)),
+    ("holidays", "Christmas & New Year", "18 December – 2 January", (12, 18), (1, 2)),
 ]
+
+
+def season_key(month, day):
+    """Which season a date falls in. Ranges may wrap the year end."""
+    for key, _label, _blurb, (sm, sd), (em, ed) in SEASONS:
+        start, end, here = (sm, sd), (em, ed), (month, day)
+        if start <= end:
+            if start <= here <= end:
+                return key
+        elif here >= start or here <= end:   # wraps December into January
+            return key
+    return None
 
 
 def fetch(api_key, url):
@@ -78,38 +100,48 @@ def extract_days(raw):
 
 
 def summarise(days):
-    by_month = {}
+    buckets = {}
     for d in days:
         try:
             month = int(d["date"][5:7])
+            day = int(d["date"][8:10])
             price = float(d["price"])
             min_stay = int(d.get("min_stay") or 2)
         except (KeyError, TypeError, ValueError):
             continue
         if price <= 0:
             continue
-        by_month.setdefault(month, []).append((price, min_stay))
+        key = season_key(month, day)
+        if key is None:
+            continue
+        buckets.setdefault(key, []).append((price, min_stay))
 
     seasons = []
-    for label, months, start, end in SEASONS:
-        vals = [v for m in range(start, end + 1) for v in by_month.get(m, [])]
+    for key, label, months, _start, _end in SEASONS:
+        vals = buckets.get(key)
         if not vals:
             continue
         prices = [p for p, _ in vals]
         stays = [s for _, s in vals]
         seasons.append(
             {
-                "key": label.lower().split()[0].strip("&"),
+                "key": key,
                 "label": label,
                 "months": months,
                 "from": int(min(prices)),
                 "to": int(max(prices)),
                 "typical": int(statistics.median(prices)),
-                "minStay": int(statistics.mode(stays)),
+                # max, not mode. A season can mix 2- and 3-night minimums, and
+                # the two failure directions are not symmetric: telling someone
+                # 2 nights when the night they want needs 3 sends them to a
+                # checkout that refuses them, which is the exact mismatch this
+                # block exists to prevent. Quoting the stricter number is a
+                # smaller error than quoting one that does not hold.
+                "minStay": int(max(stays)),
             }
         )
 
-    all_prices = [p for vals in by_month.values() for p, _ in vals]
+    all_prices = [p for vals in buckets.values() for p, _ in vals]
     if not all_prices:
         raise ValueError("no usable prices in response")
 
