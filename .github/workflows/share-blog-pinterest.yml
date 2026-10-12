@@ -184,10 +184,55 @@ jobs:
 
           echo "$DESCRIPTION" > /tmp/pin_description.txt
 
+      # Pinterest v5 access tokens live 30 days. The old setup stored one as a
+      # static secret on 2026-04-08; it died around 8 May and every run since
+      # failed on "Authentication failed." We now mint one per run from a
+      # refresh token. Bootstrap with scripts/pinterest_auth.py.
+      - name: Mint Pinterest access token
+        if: steps.blog.outputs.found == 'true'
+        id: pintoken
+        env:
+          APP_ID: ${{ secrets.PINTEREST_APP_ID }}
+          APP_SECRET: ${{ secrets.PINTEREST_APP_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.PINTEREST_REFRESH_TOKEN }}
+        run: |
+          if [ -z "$APP_ID" ] || [ -z "$APP_SECRET" ] || [ -z "$REFRESH_TOKEN" ]; then
+            echo "::error::Pinterest OAuth secrets are missing. Run scripts/pinterest_auth.py."
+            exit 1
+          fi
+
+          RESP=$(curl -s -X POST "https://api.pinterest.com/v5/oauth/token" \
+            -u "${APP_ID}:${APP_SECRET}" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            --data-urlencode "grant_type=refresh_token" \
+            --data-urlencode "refresh_token=${REFRESH_TOKEN}")
+
+          TOKEN=$(printf '%s' "$RESP" | jq -r '.access_token // empty')
+          if [ -z "$TOKEN" ]; then
+            # Print only error fields. The body can carry token material.
+            echo "::error::Could not mint an access token."
+            printf '%s' "$RESP" | jq -r '{error, error_description, message} | del(..|nulls)' || true
+            echo "If the refresh token has expired, re-run scripts/pinterest_auth.py."
+            exit 1
+          fi
+
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+          echo "Minted an access token, valid $(printf '%s' "$RESP" | jq -r '.expires_in // "?"')s."
+
+          # Pinterest may hand back a rotated refresh token. If it does, the
+          # stored one is now stale and the next run would fail, so say so
+          # loudly rather than discovering it a month later.
+          NEW_REFRESH=$(printf '%s' "$RESP" | jq -r '.refresh_token // empty')
+          if [ -n "$NEW_REFRESH" ] && [ "$NEW_REFRESH" != "$REFRESH_TOKEN" ]; then
+            echo "::add-mask::$NEW_REFRESH"
+            echo "::warning::Pinterest rotated the refresh token. Re-run scripts/pinterest_auth.py to store the new one, or the next run will fail."
+          fi
+
       - name: Create Pinterest pin
         if: steps.blog.outputs.found == 'true'
         env:
-          PINTEREST_ACCESS_TOKEN: ${{ secrets.PINTEREST_ACCESS_TOKEN }}
+          PINTEREST_ACCESS_TOKEN: ${{ steps.pintoken.outputs.token }}
           PINTEREST_BOARD_ID: ${{ secrets.PINTEREST_BOARD_ID }}
         run: |
           DESCRIPTION=$(cat /tmp/pin_description.txt)
