@@ -131,13 +131,18 @@ def summarise(days):
                 "from": int(min(prices)),
                 "to": int(max(prices)),
                 "typical": int(statistics.median(prices)),
-                # max, not mode. A season can mix 2- and 3-night minimums, and
-                # the two failure directions are not symmetric: telling someone
-                # 2 nights when the night they want needs 3 sends them to a
-                # checkout that refuses them, which is the exact mismatch this
-                # block exists to prevent. Quoting the stricter number is a
-                # smaller error than quoting one that does not hold.
-                "minStay": int(max(stays)),
+                # A season can mix minimums: summer is mostly 2 nights but
+                # peak weeks ask 4, and the holidays ask 3. Publishing a single
+                # number is wrong in one direction or the other — mode hides
+                # the 3-night Christmas requirement, max brands the whole of
+                # summer as 4. So publish the real span and let the table say
+                # "2–4 nights". minStay stays the floor for anything numeric.
+                "minStay": int(min(stays)),
+                "minStayMax": int(max(stays)),
+                "minStayLabel": (
+                    str(min(stays)) if min(stays) == max(stays)
+                    else f"{min(stays)}\u2013{max(stays)}"
+                ),
             }
         )
 

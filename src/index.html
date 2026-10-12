@@ -120,7 +120,7 @@
     {
       "@type": "Offer",
       "name": "{{ season.label }} nightly rate",
-      "description": "{{ season.months }}. Minimum stay {{ season.minStay }} nights. Rates before fees and taxes.",
+      "description": "{{ season.months }}. Minimum stay {{ season.minStayLabel | default: season.minStay }} nights. Rates before fees and taxes.",
       "availability": "https://schema.org/InStock",
       "priceCurrency": "USD",
       "priceSpecification": {
@@ -605,7 +605,7 @@ footer ul a:hover{color:var(--gold2)}
             <td style="padding:1rem 1.25rem;font-family:var(--serif);font-size:1.05rem;color:var(--ink)">{{ season.label | escape }}</td>
             <td style="padding:1rem 1.25rem;font-size:.9rem;color:var(--muted)">{{ season.months | escape }}</td>
             <td style="padding:1rem 1.25rem;text-align:right;font-size:.95rem;color:var(--ink2);white-space:nowrap">${{ season.from }} – ${{ season.to }}</td>
-            <td style="padding:1rem 1.25rem;text-align:right;font-size:.95rem;color:var(--ink2);white-space:nowrap">{{ season.minStay }} nights</td>
+            <td style="padding:1rem 1.25rem;text-align:right;font-size:.95rem;color:var(--ink2);white-space:nowrap">{{ season.minStayLabel | default: season.minStay }} nights</td>
           </tr>
           {% endfor %}
         </tbody>

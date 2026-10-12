@@ -13,56 +13,68 @@
     {
       "key": "winter",
       "label": "Winter",
-      "months": "January \u2013 February",
+      "months": "January – February",
       "from": 254,
       "to": 900,
       "typical": 379,
-      "minStay": 2
+      "minStay": 2,
+      "minStayMax": 2,
+      "minStayLabel": "2"
     },
     {
       "key": "spring",
       "label": "Spring",
-      "months": "March \u2013 May",
+      "months": "March – May",
       "from": 261,
       "to": 900,
       "typical": 350,
-      "minStay": 2
+      "minStay": 2,
+      "minStayMax": 2,
+      "minStayLabel": "2"
     },
     {
       "key": "summer",
       "label": "Summer",
-      "months": "June \u2013 August",
+      "months": "June – August",
       "from": 320,
       "to": 900,
       "typical": 729,
-      "minStay": 4
+      "minStay": 4,
+      "minStayMax": 4,
+      "minStayLabel": "4"
     },
     {
       "key": "fall",
       "label": "Fall & foliage",
-      "months": "September \u2013 October",
+      "months": "September – October",
       "from": 233,
       "to": 900,
       "typical": 369,
-      "minStay": 2
+      "minStay": 2,
+      "minStayMax": 2,
+      "minStayLabel": "2"
     },
     {
       "key": "late",
       "label": "Late fall",
-      "months": "November \u2013 mid December",
+      "months": "November – mid December",
       "from": 201,
       "to": 778,
       "typical": 304,
-      "minStay": 2
+      "minStay": 2,
+      "minStayMax": 2,
+      "minStayLabel": "2"
     },
     {
       "key": "holidays",
       "label": "Christmas & New Year",
-      "months": "18 December \u2013 2 January",
+      "months": "18 December – 2 January",
       "from": 418,
       "to": 1129,
       "typical": 815,
-      "minStay": 3
+      "minStay": 3,
+      "minStayMax": 3,
+      "minStayLabel": "3"
     }
   ]
 }
