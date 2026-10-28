@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-27",
+  "updated": "2026-10-28",
   "currency": "USD",
   "source": "PriceLabs listing 200887 (uplisting)",
   "coverage": "rolling-365",
@@ -7,16 +7,16 @@
   "disclaimer": "Nightly rates before fees and taxes. Final total is shown at checkout.",
   "checkinTime": "16:00",
   "checkoutTime": "10:00",
-  "lowestNightly": 206,
-  "highestNightly": 1013,
+  "lowestNightly": 207,
+  "highestNightly": 1004,
   "seasons": [
     {
       "key": "winter",
       "label": "Winter",
       "months": "January \u2013 February",
-      "from": 260,
+      "from": 261,
       "to": 900,
-      "typical": 366,
+      "typical": 368,
       "minStay": 2,
       "minStayMax": 2,
       "minStayLabel": "2"
@@ -38,7 +38,7 @@
       "months": "June \u2013 August",
       "from": 325,
       "to": 900,
-      "typical": 768,
+      "typical": 753,
       "minStay": 2,
       "minStayMax": 4,
       "minStayLabel": "2\u20134"
@@ -47,9 +47,9 @@
       "key": "fall",
       "label": "Fall & foliage",
       "months": "September \u2013 October",
-      "from": 217,
+      "from": 236,
       "to": 900,
-      "typical": 384,
+      "typical": 386,
       "minStay": 2,
       "minStayMax": 2,
       "minStayLabel": "2"
@@ -58,9 +58,9 @@
       "key": "late",
       "label": "Late fall",
       "months": "November \u2013 mid December",
-      "from": 206,
+      "from": 207,
       "to": 699,
-      "typical": 304,
+      "typical": 303,
       "minStay": 2,
       "minStayMax": 2,
       "minStayLabel": "2"
@@ -69,9 +69,9 @@
       "key": "holidays",
       "label": "Christmas & New Year",
       "months": "18 December \u2013 2 January",
-      "from": 478,
-      "to": 1013,
-      "typical": 768,
+      "from": 486,
+      "to": 1004,
+      "typical": 792,
       "minStay": 2,
       "minStayMax": 3,
       "minStayLabel": "2\u20133"
