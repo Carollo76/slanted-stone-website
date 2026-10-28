@@ -291,7 +291,23 @@ def generate_captions(ctx: dict, rotation: dict, api_key: str) -> dict:
     with urllib.request.urlopen(req) as resp:
         response = json.loads(resp.read().decode())
 
-    text = response["content"][0]["text"].strip()
+    content = response.get("content")
+    text_blocks = [
+        block["text"]
+        for block in content if isinstance(block, dict)
+        and block.get("type") == "text"
+        and isinstance(block.get("text"), str)
+    ] if isinstance(content, list) else []
+    if not text_blocks:
+        block_types = [
+            block.get("type", "unknown") if isinstance(block, dict) else "unknown"
+            for block in content
+        ] if isinstance(content, list) else []
+        raise RuntimeError(
+            "Anthropic returned no text content "
+            f"(stop_reason={response.get('stop_reason')}, block_types={block_types})"
+        )
+    text = "\n".join(text_blocks).strip()
     # Strip optional markdown code fences
     text = re.sub(r"^```(?:json)?\s*", "", text)
     text = re.sub(r"\s*```$", "", text)
