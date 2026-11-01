@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-31",
+  "updated": "2026-11-01",
   "currency": "USD",
   "source": "PriceLabs listing 200887 (uplisting)",
   "coverage": "rolling-365",
@@ -7,7 +7,7 @@
   "disclaimer": "Nightly rates before fees and taxes. Final total is shown at checkout.",
   "checkinTime": "16:00",
   "checkoutTime": "10:00",
-  "lowestNightly": 208,
+  "lowestNightly": 207,
   "highestNightly": 969,
   "seasons": [
     {
@@ -58,9 +58,9 @@
       "key": "late",
       "label": "Late fall",
       "months": "November \u2013 mid December",
-      "from": 208,
+      "from": 207,
       "to": 670,
-      "typical": 294,
+      "typical": 299,
       "minStay": 2,
       "minStayMax": 2,
       "minStayLabel": "2"
