@@ -185,7 +185,7 @@ PROPERTY AMENITIES:
 - Ski lift chair swing
 - Gourmet kitchen
 - Forest views from every window
-- Sleeps 8, 4 bedrooms
+- Sleeps 8: three bedrooms plus a kids' bunk room (a converted office). Never call it four bedrooms; three is the permitted count.
 
 NEARBY ATTRACTIONS (with drive times):
 - Pocono Raceway (11 min)
