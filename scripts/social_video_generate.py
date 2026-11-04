@@ -24,7 +24,8 @@ posting steps.
 Required env vars:
     REPLICATE_API_TOKEN   - Replicate API token
     ANTHROPIC_API_KEY     - For caption generation via Claude
-    ANTHROPIC_MODEL       - Optional Claude model override (default: claude-fable-5)
+    ANTHROPIC_MODEL       - Optional Claude model override (default: claude-fable-5).
+                            Must accept output_config.effort (Haiku 4.5 does not).
     GITHUB_OUTPUT         - Set automatically by GitHub Actions
 """
 
@@ -273,9 +274,14 @@ def generate_captions(ctx: dict, rotation: dict, api_key: str) -> dict:
         format_name=fmt["name"], style_hint=fmt["style_hint"],
     )
 
+    # Claude Fable 5 always thinks before it answers, and the thinking tokens
+    # count against max_tokens. The old 1024 cap (sized for Haiku, which did
+    # not think) leaves too little room, so allow plenty and keep effort low:
+    # four short captions don't need deep reasoning.
     body = json.dumps({
         "model": anthropic_model,
-        "max_tokens": 1024,
+        "max_tokens": 16000,
+        "output_config": {"effort": "low"},
         "messages": [{"role": "user", "content": prompt}],
     }).encode()
 
@@ -291,21 +297,28 @@ def generate_captions(ctx: dict, rotation: dict, api_key: str) -> dict:
     with urllib.request.urlopen(req) as resp:
         response = json.loads(resp.read().decode())
 
+    # The reply starts with a thinking block, so the caption is not always
+    # content[0]. Collect every text block instead.
     content = response.get("content")
+    if not isinstance(content, list):
+        content = []
     text_blocks = [
         block["text"]
-        for block in content if isinstance(block, dict)
+        for block in content
+        if isinstance(block, dict)
         and block.get("type") == "text"
         and isinstance(block.get("text"), str)
-    ] if isinstance(content, list) else []
-    if not text_blocks:
+    ]
+    stop_reason = response.get("stop_reason")
+    if stop_reason != "end_turn" or not text_blocks:
         block_types = [
             block.get("type", "unknown") if isinstance(block, dict) else "unknown"
             for block in content
-        ] if isinstance(content, list) else []
+        ]
         raise RuntimeError(
-            "Anthropic returned no text content "
-            f"(stop_reason={response.get('stop_reason')}, block_types={block_types})"
+            "Claude did not return a complete caption "
+            f"(model={anthropic_model}, stop_reason={stop_reason}, "
+            f"block_types={block_types})"
         )
     text = "\n".join(text_blocks).strip()
     # Strip optional markdown code fences
