@@ -5,20 +5,29 @@ Wed/Fri auto-generated social videos.
 
 ## How it works
 
-1. The generator picks a `audio_mood` (one of: `fireplace`, `forest`,
-   `rain`, `evening`, `ambient`) based on the rotating video format.
-2. `pick_audio_track(mood)` looks in `audio/<mood>/` and returns a
-   random file. If that folder is empty it falls back to `audio/ambient/`.
-3. If both are empty, the workflow uses a *tamed* synthesized
-   ambient (no aggressive tremolo) so we never broadcast silence
-   or anything embarrassing.
-4. The workflow loops the chosen track to the video's duration,
+1. The generator looks for a real track (any file not named `placeholder-*`)
+   in `audio/<season>/` (`winter`, `spring`, `summer`, `fall`), then
+   `audio/any/`, then the older mood folders (`fireplace`, `evening`,
+   `forest`, `rain`, `ambient`).
+2. Only when there is no real track anywhere does it fall back to the
+   `placeholder-*` synth pads, and the log says so. Those pads are what make
+   the videos sound flat: add real tracks and they stop being used.
+3. If even those are missing, the workflow uses a tamed synthesized ambient
+   so we never broadcast silence.
+4. The workflow loops the chosen track to the video's length (about 15s),
    applies a 1s fade in/out, and mixes it at ~60% volume.
+
+## Quick start
+
+Drop 3 to 5 all-year tracks into `audio/any/` (cozy, acoustic, lo-fi,
+warm piano) and a few wintery ones into `audio/winter/`, which takes over
+from December 1. Add `spring/`, `summer/` and `fall/` tracks as those
+seasons come round.
 
 ## What to drop here
 
-- Short instrumental tracks. **10–60 seconds is ideal**; longer is fine,
-  shorter loops cleanly.
+- Instrumental tracks with a clear start. Only the first ~15 seconds are
+  used, so pick tracks that open strong (no long fade-in).
 - `.mp3`, `.m4a`, `.wav`, `.aac`, or `.ogg`.
 - One per file. Drop multiple in the same mood folder for variety —
   the picker chooses randomly per video.
@@ -50,10 +59,9 @@ posts using unlicensed music. Only use tracks that are explicitly:
 - "Royalty-free" sites that require attribution (Bensound, etc.)
 - AI-generated cover songs of popular artists (Meta blocks these too)
 
-## Folder map → mood
+## Folder map
 
-- `fireplace/` — warm, cozy, indoor (paired with sauna / fireplace / great-room photos)
-- `forest/` — outdoor, organic, light (UGC/lifestyle format videos)
-- `rain/` — atmospheric, melancholy
-- `evening/` — relaxed, golden-hour, end-of-day (cinematic format videos)
-- `ambient/` — generic fallback when the mood folder is empty
+- `winter/`, `spring/`, `summer/`, `fall/` — used in that season (first choice)
+- `any/` — all-year tracks, used when the season folder is empty
+- `fireplace/`, `evening/`, `forest/`, `rain/`, `ambient/` — older mood
+  folders, still used as a last resort before the placeholder pads
