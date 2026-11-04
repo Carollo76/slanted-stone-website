@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       test_mode:
-        description: 'Test mode: generate video only, skip R2 upload + Slack approval card (nothing posted)'
+        description: 'Test mode: make the video only, skip R2 upload + Slack approval card (nothing posted). The video is saved on the run page under Artifacts.'
         type: boolean
         required: false
         default: false
@@ -114,6 +114,20 @@ jobs:
             /tmp/video_with_audio.mp4 -y 2>/dev/null
           mv /tmp/video_with_audio.mp4 /tmp/video.mp4
           echo "Audio added successfully"
+
+      - name: Save test video for download
+        if: steps.video.outputs.video_ready == 'true' && inputs.test_mode == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-video
+          retention-days: 7
+          path: |
+            /tmp/video.mp4
+            /tmp/hook_text.txt
+            /tmp/fb_caption.txt
+            /tmp/ig_caption.txt
+            /tmp/gbp_caption.txt
+            /tmp/video_prompt.txt
 
       - name: Upload pending video + captions to R2
         if: steps.video.outputs.video_ready == 'true' && inputs.test_mode != true
