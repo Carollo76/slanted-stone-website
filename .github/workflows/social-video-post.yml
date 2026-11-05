@@ -8,10 +8,16 @@ on:
   workflow_dispatch:
     inputs:
       test_mode:
-        description: 'Test mode: generate video only, skip R2 upload + Slack approval card (nothing posted)'
+        description: 'Test mode: make the video only, skip R2 upload + Slack approval card (nothing posted). The video is saved on the run page under Artifacts.'
         type: boolean
         required: false
         default: false
+      season:
+        description: 'Season to make the video for (blank = today''s season)'
+        type: choice
+        required: false
+        default: ''
+        options: ['', winter, spring, summer, fall]
 
 # Wed/Fri auto videos are NO LONGER posted directly. This workflow generates
 # the video, adds ambient audio, stores it in R2, and posts an Approve/Reject
@@ -36,17 +42,20 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Generate video (multi-model routing)
+      - name: Install ffmpeg and fonts
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg fonts-dejavu-core > /dev/null 2>&1
+
+      - name: Generate video (3 shots, hook line, real clips first)
         id: video
         env:
           REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SEASON_OVERRIDE: ${{ inputs.season }}
         run: python3 scripts/social_video_generate.py
 
       - name: Add audio to video
-        if: steps.video.outputs.video_url != ''
+        if: steps.video.outputs.video_ready == 'true'
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null 2>&1
           MOOD="${{ steps.video.outputs.audio_mood }}"
           TRACK="${{ steps.video.outputs.audio_track }}"
           DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 /tmp/video.mp4 | cut -d. -f1)
@@ -106,8 +115,22 @@ jobs:
           mv /tmp/video_with_audio.mp4 /tmp/video.mp4
           echo "Audio added successfully"
 
+      - name: Save test video for download
+        if: steps.video.outputs.video_ready == 'true' && inputs.test_mode == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-video
+          retention-days: 7
+          path: |
+            /tmp/video.mp4
+            /tmp/hook_text.txt
+            /tmp/fb_caption.txt
+            /tmp/ig_caption.txt
+            /tmp/gbp_caption.txt
+            /tmp/video_prompt.txt
+
       - name: Upload pending video + captions to R2
-        if: steps.video.outputs.video_url != '' && inputs.test_mode != true
+        if: steps.video.outputs.video_ready == 'true' && inputs.test_mode != true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -134,7 +157,7 @@ jobs:
             --file=/tmp/meta.json --content-type=application/json --remote
 
       - name: Post approval card to Slack
-        if: steps.video.outputs.video_url != '' && inputs.test_mode != true
+        if: steps.video.outputs.video_ready == 'true' && inputs.test_mode != true
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL: ${{ secrets.SLACK_SOCIAL_CHANNEL_ID }}
@@ -151,8 +174,13 @@ jobs:
           # Signed, hard-to-guess URL to the pending video (matches the worker's HMAC).
           SIG=$(printf '%s' "${RUN_ID}.mp4" | openssl dgst -sha256 -hmac "$VIDEO_SIGN_SECRET" | sed 's/^.* //')
           WATCH_URL="https://slantedstone.com/api/video/file/${RUN_ID}.mp4?sig=${SIG}"
-          PHOTO_ENC=$(jq -rn --arg p "$PHOTO" '$p|@uri')
-          IMAGE_URL="https://slantedstone.com/images/${PHOTO_ENC}"
+          HOOK=$(cat /tmp/hook_text.txt 2>/dev/null || true)
+          COVER="${{ steps.video.outputs.cover_photo }}"
+          IMAGE_URL=""
+          if [ -n "$COVER" ]; then
+            COVER_ENC=$(jq -rn --arg p "$COVER" '$p|@uri')
+            IMAGE_URL="https://slantedstone.com/images/${COVER_ENC}"
+          fi
 
           jq -n \
             --arg channel "$SLACK_CHANNEL" \
@@ -162,6 +190,7 @@ jobs:
             --arg format "$FORMAT" \
             --arg model "$MODEL" \
             --arg photo "$PHOTO" \
+            --arg hook "$HOOK" \
             --arg fb "$FB_CAPTION" \
             --arg ig "$IG_CAPTION" \
             --arg gbp "$GBP_CAPTION" \
@@ -170,8 +199,8 @@ jobs:
               text: ("New auto video awaiting approval — watch: " + $watch),
               blocks: [
                 {type:"header", text:{type:"plain_text", text:"🎬 New auto video — approve to post?", emoji:true}},
-                {type:"section", text:{type:"mrkdwn", text:("*Format:* " + $format + "\n*Model:* " + $model + "\n*Photo:* " + $photo)}},
-                {type:"image", image_url:$image, alt_text:"Source photo"},
+                {type:"section", text:{type:"mrkdwn", text:("*Hook:* " + $hook + "\n*Format:* " + $format + "\n*Model:* " + $model + "\n*Shots:* " + $photo)}},
+                (if $image != "" then {type:"image", image_url:$image, alt_text:"Source photo"} else empty end),
                 {type:"section", text:{type:"mrkdwn", text:("▶ *<" + $watch + "|Watch the generated video>*")}},
                 {type:"divider"},
                 {type:"section", text:{type:"mrkdwn", verbatim:true, text:("*Facebook:*\n" + $fb)}},
