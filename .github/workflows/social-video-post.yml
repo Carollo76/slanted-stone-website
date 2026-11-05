@@ -67,10 +67,10 @@ jobs:
 
           if [ -n "$TRACK" ] && [ -f "$TRACK" ]; then
             # Real music track from audio/<mood>/. Loop to video duration
-            # (no-op if track is longer than the video), attenuate to ~60%
-            # so it doesn't drown the future voiceover work.
+            # (no-op if track is longer than the video) and even out loudness
+            # so quiet and loud tracks play at the same level.
             echo "Using audio track: $TRACK"
-            ffmpeg -stream_loop -1 -i "$TRACK" -t ${DURATION} -af "volume=0.6" \
+            ffmpeg -stream_loop -1 -i "$TRACK" -t ${DURATION} -af "loudnorm=I=-16:TP=-1.5:LRA=11" \
               -ar 44100 -ac 2 /tmp/ambient.wav -y 2>/dev/null
           else
             # Fallback: defanged synth ambient (the original synth had an
