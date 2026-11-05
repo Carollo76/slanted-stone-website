@@ -443,8 +443,14 @@ def call_claude(content: list[dict], api_key: str) -> dict:
             "anthropic-version": "2023-06-01",
         },
     )
-    with urllib.request.urlopen(req) as resp:
-        response = json.loads(resp.read().decode())
+    try:
+        with urllib.request.urlopen(req) as resp:
+            response = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        msg = e.read().decode(errors="replace")
+        raise RuntimeError(
+            f"Claude API call failed ({e.code}, model={anthropic_model}): {msg[:1000]}"
+        ) from e
 
     # The reply starts with a thinking block, so collect every text block.
     blocks = response.get("content")
