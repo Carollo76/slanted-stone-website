@@ -43,15 +43,16 @@ posts using unlicensed music. Only use tracks that are explicitly:
 - **No attribution required** (or attribution that we can satisfy
   without crediting in-video — most platforms don't let us add credits).
 
-### Recommended sources (in order of safety)
+### Recommended source
 
-1. **YouTube Audio Library** — studio.youtube.com → Audio Library.
-   Filter "Attribution not required". All free for commercial use,
-   downloadable as mp3. **Safest pick.**
-2. **Pixabay Music** — pixabay.com/music. Free for commercial use, no
-   attribution required for most tracks. Sign up free, download as mp3.
-3. **Uppbeat** — uppbeat.io free tier. Some tracks attribution-required;
-   only use the **"No credit required"** filter.
+**Pixabay Music** (pixabay.com/music). Its license page says content is free
+to use for commercial purposes and attribution isn't required. Search terms
+that suit the chalet: "cozy acoustic", "lofi chill", "warm piano",
+"cabin", "winter". Pick instrumental tracks with no vocals.
+
+Not recommended for these videos: the YouTube Audio Library. YouTube's own
+help page calls its music copyright-safe on YouTube but says nothing about
+using it in Instagram or Facebook posts.
 
 ### Avoid
 
