@@ -26,7 +26,11 @@ on:
 
 jobs:
   create-and-post:
-    runs-on: ubuntu-latest
+    # Pinned to 24.04: on Nov 11 the job landed on the new ubuntu-26.04 image,
+    # could not reach the Ubuntu package servers, and the ffmpeg install hung
+    # for an hour before failing. Every successful run so far was on 24.04.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repo
@@ -43,7 +47,21 @@ jobs:
           node-version: '20'
 
       - name: Install ffmpeg and fonts
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg fonts-dejavu-core > /dev/null 2>&1
+        # Give up after 10 minutes instead of hanging. Each try is capped at
+        # 4 minutes and retried once, and apt's errors stay in the log.
+        timeout-minutes: 10
+        run: |
+          for attempt in 1 2; do
+            if timeout 240 sudo apt-get update -qq -o Acquire::Retries=3 \
+               && timeout 240 sudo apt-get install -y -qq -o Acquire::Retries=3 ffmpeg fonts-dejavu-core > /dev/null; then
+              echo "ffmpeg installed on attempt ${attempt}"
+              exit 0
+            fi
+            echo "::warning::ffmpeg install attempt ${attempt} failed"
+            sleep 20
+          done
+          echo "::error::Could not install ffmpeg after 2 attempts (Ubuntu package servers unreachable?)"
+          exit 1
 
       - name: Generate video (3 shots, hook line, real clips first)
         id: video
