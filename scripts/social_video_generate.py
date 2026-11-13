@@ -512,6 +512,12 @@ def generate_plan(ctx: dict, shots: list[dict], theme: str, api_key: str) -> dic
 # Replicate
 # --------------------------------------------------------------------------- #
 
+# api.replicate.com sits behind Cloudflare, which started answering urllib's
+# default "Python-urllib/x.y" User-Agent with 403 "error code: 1010" (seen on
+# the Nov 13, 2026 run). fetch_rates.py hit the same wall with PriceLabs.
+USER_AGENT = "slantedstone-video/1.0 (+https://slantedstone.com)"
+
+
 def replicate_create_prediction(model_slug: str, input_payload: dict, token: str) -> str:
     body = json.dumps({"input": input_payload}).encode()
     req = urllib.request.Request(
@@ -522,6 +528,7 @@ def replicate_create_prediction(model_slug: str, input_payload: dict, token: str
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
             "Prefer": "wait=0",
+            "User-Agent": USER_AGENT,
         },
     )
     try:
@@ -542,7 +549,7 @@ def replicate_poll(prediction_id: str, token: str, timeout_seconds: int = 900) -
     while time.time() < deadline:
         req = urllib.request.Request(
             f"https://api.replicate.com/v1/predictions/{prediction_id}",
-            headers={"Authorization": f"Bearer {token}"},
+            headers={"Authorization": f"Bearer {token}", "User-Agent": USER_AGENT},
         )
         with urllib.request.urlopen(req) as resp:
             data = json.loads(resp.read().decode())
@@ -563,7 +570,8 @@ def replicate_poll(prediction_id: str, token: str, timeout_seconds: int = 900) -
 
 def download_to(url: str, dest: Path) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
-    with urllib.request.urlopen(url) as resp, open(dest, "wb") as f:
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(req) as resp, open(dest, "wb") as f:
         f.write(resp.read())
     print(f"[info] Downloaded {url} -> {dest}")
 
