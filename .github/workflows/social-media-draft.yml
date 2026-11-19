@@ -17,22 +17,38 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          # Need the commit before the merge too, so the next step can diff
-          # HEAD~1..HEAD to find the new blog post.
-          fetch-depth: 2
+          # A squash merge collapses the branch into one commit, so HEAD~1..HEAD
+          # is the right range — but depth 2 is not always enough to resolve the
+          # parent of a merge commit. A little more history costs nothing here.
+          fetch-depth: 10
 
       - name: Find blog post file
         id: find
         run: |
           FILE=$(git diff --name-only HEAD~1 HEAD -- 'src/blog/posts/*.md' | head -1)
+          # Fallback for merge commits, where HEAD~1 is the first parent and the
+          # post arrived on the second. Same two-step lookup the share workflows
+          # use.
           if [ -z "$FILE" ]; then
-            echo "No blog post found in this merge"
-            exit 1
+            FILE=$(git log -1 --name-only --pretty=format: -- 'src/blog/posts/*.md' | head -1)
           fi
+
+          if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then
+            # Not an error. A branch named blog/* that edits no post is a
+            # perfectly ordinary thing — a fix to a layout, a revert, a tidy-up.
+            # Failing here painted the run red and sent an alert for a PR that
+            # simply had no social draft to write.
+            echo "No blog post in this merge — nothing to draft."
+            echo "found=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "found=true" >> $GITHUB_OUTPUT
           echo "filepath=${FILE}" >> $GITHUB_OUTPUT
 
       - name: Generate social media drafts
         id: generate
+        if: steps.find.outputs.found == 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
@@ -79,6 +95,7 @@ jobs:
           echo "$CONTENT" > /tmp/social_drafts.txt
 
       - name: Send to Slack
+        if: steps.find.outputs.found == 'true'
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_SOCIAL }}
         run: |

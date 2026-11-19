@@ -601,14 +601,34 @@ def build_input_for(model: str, image_url: str, video_prompt: str) -> dict:
     raise ValueError(f"No input adapter for model {model}")
 
 
-def render_ai_shot(shot: dict, index: int, model: str, token: str) -> Path:
-    payload = build_input_for(model, encode_image_url(shot["photo"]), shot["prompt"])
-    print(f"[info] Shot {index}: {model} with {json.dumps(payload)}")
-    prediction_id = replicate_create_prediction(model, payload, token)
-    url = replicate_poll(prediction_id, token)
-    raw = WORK_DIR / f"shot{index}_raw.mp4"
-    download_to(url, raw)
-    return raw
+def render_ai_shot(shot: dict, index: int, model: str, token: str,
+                   attempts: int = 2) -> Path:
+    """Render one AI shot, retrying once.
+
+    Kling rejects some inputs with ModelError E005, "the input or output was
+    flagged as sensitive". It is applied to the generated frames as much as to
+    the prompt, so it is not deterministic: the same photo and prompt often
+    pass on a second attempt. Retrying is worth more than rewording.
+    """
+    last: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        payload = build_input_for(model, encode_image_url(shot["photo"]), shot["prompt"])
+        print(f"[info] Shot {index} attempt {attempt}/{attempts}: {model} "
+              f"with {json.dumps(payload)}")
+        try:
+            prediction_id = replicate_create_prediction(model, payload, token)
+            url = replicate_poll(prediction_id, token)
+        except RuntimeError as exc:
+            last = exc
+            print(f"[warn] Shot {index} attempt {attempt}/{attempts} failed: {exc}",
+                  file=sys.stderr)
+            if attempt < attempts:
+                time.sleep(5)
+            continue
+        raw = WORK_DIR / f"shot{index}_raw.mp4"
+        download_to(url, raw)
+        return raw
+    raise last  # type: ignore[misc]
 
 # --------------------------------------------------------------------------- #
 # Music
@@ -683,13 +703,31 @@ def main() -> int:
             futures = {i: pool.submit(render_ai_shot, s, i, model, replicate_token)
                        for i, s in ai_shots}
             for i, fut in futures.items():
-                raw[i] = fut.result()
+                # One rejected shot used to abort the whole video: fut.result()
+                # re-raised and nothing was posted. Of 11 runs, 8 died this way
+                # on a single flagged clip. A short video beats no video, so a
+                # shot that cannot be rendered is dropped and the rest proceed.
+                try:
+                    raw[i] = fut.result()
+                except Exception as exc:
+                    print(f"[warn] Shot {i} dropped, continuing without it: {exc}",
+                          file=sys.stderr)
 
     pieces = []
     for i in range(1, len(shots) + 1):
+        if i not in raw:
+            continue
         piece = WORK_DIR / f"shot{i}.mp4"
         normalise(raw[i], piece)
         pieces.append(piece)
+
+    if not pieces:
+        print("[error] No usable shots: every clip was rejected or failed.",
+              file=sys.stderr)
+        return 1
+    if len(pieces) < len(shots):
+        print(f"[warn] Assembling {len(pieces)} of {len(shots)} shots.",
+              file=sys.stderr)
     assemble(pieces, plan["hook_text"], OUTPUT_VIDEO)
     print(f"[info] Video ready: {OUTPUT_VIDEO} ({probe_duration(OUTPUT_VIDEO):.1f}s)")
 
