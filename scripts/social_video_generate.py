@@ -620,6 +620,14 @@ def render_ai_shot(shot: dict, index: int, model: str, token: str,
             url = replicate_poll(prediction_id, token)
         except RuntimeError as exc:
             last = exc
+            # 401/403 is the token, the billing or the model entitlement — a
+            # second identical request cannot fix it, and retrying only buries
+            # the cause. On 13 Nov 2026 every shot failed this way.
+            if "(401)" in str(exc) or "(403)" in str(exc):
+                print(f"[error] Shot {index}: Replicate refused the request. "
+                      f"Check REPLICATE_API_TOKEN and the account's billing and "
+                      f"model access. Not retrying.\n  {exc}", file=sys.stderr)
+                raise
             print(f"[warn] Shot {index} attempt {attempt}/{attempts} failed: {exc}",
                   file=sys.stderr)
             if attempt < attempts:

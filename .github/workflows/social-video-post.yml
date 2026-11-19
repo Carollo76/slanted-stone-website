@@ -51,9 +51,22 @@ jobs:
         # 4 minutes and retried once, and apt's errors stay in the log.
         timeout-minutes: 10
         run: |
+          # ffmpeg ships on GitHub's ubuntu runner images. Reaching for apt at
+          # all made every run depend on Ubuntu's package servers being up —
+          # they were not on 11 Nov 2026 and the run died with apt's exit 100,
+          # having never touched a video. Only install what is actually absent.
+          need=""
+          command -v ffmpeg >/dev/null 2>&1 || need="$need ffmpeg"
+          fc-list 2>/dev/null | grep -qi dejavu || need="$need fonts-dejavu-core"
+          if [ -z "$need" ]; then
+            echo "ffmpeg and DejaVu already present; skipping apt."
+            exit 0
+          fi
+          echo "Need to install:$need"
+
           for attempt in 1 2; do
             if timeout 240 sudo apt-get update -qq -o Acquire::Retries=3 \
-               && timeout 240 sudo apt-get install -y -qq -o Acquire::Retries=3 ffmpeg fonts-dejavu-core > /dev/null; then
+               && timeout 240 sudo apt-get install -y -qq -o Acquire::Retries=3 $need > /dev/null; then
               echo "ffmpeg installed on attempt ${attempt}"
               exit 0
             fi
