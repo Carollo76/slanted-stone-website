@@ -1,9 +1,22 @@
 # Real video clips
 
-Clips filmed at the chalet. The Wed/Fri social video uses these **before** any
-AI shots: every clip that fits the season replaces one AI shot, so it costs
-nothing on Replicate and looks real. With three or more clips for the season,
-a video is made entirely from real footage.
+Clips filmed at the chalet. The Wednesday social video uses these **before**
+any AI shot, and every clip that fits the season displaces a paid one.
+
+**This is the cost control.** AI shots are billed per generation on Replicate;
+clips here are free and look better. The run is capped at one AI shot
+(`MAX_AI_SHOTS` in the workflow), so:
+
+| Clips for the season | Video is | Paid generations |
+|---|---|---|
+| 0 | 1 shot, all AI | 1 |
+| 1 | 2 shots | 1 |
+| 2 | 3 shots | 1 |
+| 3 or more | 3 shots, all real | **0** |
+
+Three clips per season makes the video free to produce. Set `MAX_AI_SHOTS` to
+`0` to guarantee no spend at all, though with no clips there is then nothing
+to film and the run stops.
 
 ## Folders
 

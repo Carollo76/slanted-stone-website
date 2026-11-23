@@ -209,6 +209,14 @@ def shot_count() -> int:
     return min(max(n, 3), 4)
 
 
+def max_ai_shots() -> int:
+    """How many shots may be paid for. 0 makes a run free: real clips only."""
+    try:
+        return max(int(os.environ.get("MAX_AI_SHOTS", "1")), 0)
+    except ValueError:
+        return 1
+
+
 def find_clips(season: str) -> list[Path]:
     clips: list[Path] = []
     for folder in (season.lower(), "any"):
@@ -237,15 +245,24 @@ def pick_shots(ctx: dict, n: int) -> list[dict]:
     for clip in clips[:n]:
         shots.append({"kind": "clip", "path": clip, "name": clip.name})
 
-    if len(shots) < n:
+    # Every AI shot is a billable Kling generation. With the clips/ folders
+    # empty, a 3-shot video meant 3 generations twice a week, which is where
+    # the Replicate credit went. Real footage is free and looks better, so AI
+    # only ever fills the gap, and only up to MAX_AI_SHOTS of it.
+    want_ai = min(n - len(shots), max_ai_shots())
+    if want_ai > 0:
         pool = photo_pool(ctx["snow"])
         rng.shuffle(pool)
         if not shots:
             # Open with a photo that makes a good hook; in snow season, a snow one.
             pool.sort(key=lambda p: (not p["hook"], ctx["snow"] and p["season"] != "snow"))
-        for photo in pool[: n - len(shots)]:
+        for photo in pool[:want_ai]:
             shots.append({"kind": "ai", "photo": photo["file"], "desc": photo["desc"],
                           "name": photo["file"]})
+
+    if len(shots) < n:
+        print(f"[info] {len(shots)} shot(s): {len(clips)} real clip(s) available and "
+              f"AI capped at {max_ai_shots()}. Add footage to clips/ for a longer video.")
     return shots
 
 
@@ -602,7 +619,7 @@ def build_input_for(model: str, image_url: str, video_prompt: str) -> dict:
 
 
 def render_ai_shot(shot: dict, index: int, model: str, token: str,
-                   attempts: int = 2) -> Path:
+                   attempts: int | None = None) -> Path:
     """Render one AI shot, retrying once.
 
     Kling rejects some inputs with ModelError E005, "the input or output was
@@ -610,6 +627,14 @@ def render_ai_shot(shot: dict, index: int, model: str, token: str,
     the prompt, so it is not deterministic: the same photo and prompt often
     pass on a second attempt. Retrying is worth more than rewording.
     """
+    # Default is a single attempt. Retrying a flagged shot buys a second
+    # billable generation for the same clip, which is the wrong trade now that
+    # a dropped shot just shortens the video instead of failing the run.
+    if attempts is None:
+        try:
+            attempts = max(int(os.environ.get("AI_SHOT_ATTEMPTS", "1")), 1)
+        except ValueError:
+            attempts = 1
     last: Exception | None = None
     for attempt in range(1, attempts + 1):
         payload = build_input_for(model, encode_image_url(shot["photo"]), shot["prompt"])
@@ -690,6 +715,11 @@ def main() -> int:
 
     ctx = build_context()
     shots = pick_shots(ctx, shot_count())
+    if not shots:
+        print("[error] Nothing to film: no clips in clips/ for this season and "
+              "MAX_AI_SHOTS is 0, so there is no shot to generate either. Add "
+              "footage to clips/, or allow at least one AI shot.", file=sys.stderr)
+        return 1
     theme = pick_theme(ctx)
     print(f"[info] Date context: {ctx}")
     print(f"[info] Theme: {theme}")

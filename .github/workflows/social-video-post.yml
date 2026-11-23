@@ -2,9 +2,11 @@ name: Social Media Video Post
 
 on:
   schedule:
-    # Wed, Fri at 10am ET (2pm UTC). Monday is reserved for the
-    # weekend-crafted premium video posted via post-existing-video.yml.
-    - cron: '0 14 * * 3,5'
+    # Wednesday at 10am ET (2pm UTC), once a week. Was Wed AND Fri with three
+    # AI shots each, i.e. six paid Kling generations a week, which is where the
+    # Replicate credit went. Monday stays reserved for the weekend-crafted
+    # premium video posted via post-existing-video.yml.
+    - cron: '0 14 * * 3'
   workflow_dispatch:
     inputs:
       test_mode:
@@ -76,9 +78,14 @@ jobs:
           echo "::error::Could not install ffmpeg after 2 attempts (Ubuntu package servers unreachable?)"
           exit 1
 
-      - name: Generate video (3 shots, hook line, real clips first)
+      - name: Generate video (real clips first, at most 1 AI shot)
         id: video
         env:
+          # Cost controls. Every AI shot is a paid Kling generation; real
+          # clips in clips/ are free and are always used first.
+          MAX_AI_SHOTS: '1'        # 0 = free run, real footage only
+          AI_SHOT_ATTEMPTS: '1'    # no retry: a retry is a second paid clip
+          VIDEO_MODE: 'pro'        # 'standard' is 720p and cheaper than 1080p
           REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SEASON_OVERRIDE: ${{ inputs.season }}
