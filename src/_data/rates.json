@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-26",
+  "updated": "2026-11-27",
   "currency": "USD",
   "source": "PriceLabs listing 200887 (uplisting)",
   "coverage": "rolling-365",
@@ -59,7 +59,7 @@
       "label": "Late fall",
       "months": "November \u2013 mid December",
       "from": 220,
-      "to": 851,
+      "to": 852,
       "typical": 380,
       "minStay": 2,
       "minStayMax": 3,
@@ -72,9 +72,9 @@
       "from": 373,
       "to": 1029,
       "typical": 716,
-      "minStay": 1,
+      "minStay": 2,
       "minStayMax": 2,
-      "minStayLabel": "1\u20132"
+      "minStayLabel": "2"
     }
   ]
 }
