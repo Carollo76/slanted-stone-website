@@ -4,9 +4,14 @@ Refresh src/_data/rates.json from PriceLabs.
 
 Publishes seasonal *ranges* only — never date-level availability. See the audit
 report for the reasoning: a static build cannot honestly represent availability
-that changes minute to minute, and the feed's availability semantics are
-ambiguous (demand_desc "Unavailable" appears both with and without a
-booking_status, so it cannot be mapped to "booked" with confidence).
+that changes minute to minute.
+
+The ranges do, however, cover only nights a visitor could actually book. See
+is_bookable(). Including sold nights made the published range dishonest in both
+directions: on 2026-11-28 the homepage advertised "Christmas & New Year
+$377 – $1,045" when $377 was 18 December (sold three weeks earlier) and $1,045
+was New Year's Eve (blocked). Neither endpoint was reservable; the cheapest
+night anyone could actually book in that window was $405.
 
 Env:
   PRICELABS_API_KEY  required
@@ -99,6 +104,33 @@ def extract_days(raw):
     raise ValueError(f"unrecognised response shape: {type(body)}")
 
 
+def is_bookable(d):
+    """True for a night a visitor could actually reserve.
+
+    PriceLabs marks sold and owner-blocked nights identically in demand_desc
+    ("Unavailable"), which is why availability used to be ignored here.
+    `occupancy` is the usable signal: 1 on every night that cannot be booked,
+    0 on every night that can. Checked against the live feed for
+    2026-12-15..2027-02-01, where it agreed with demand_desc and with
+    user_price == -1 on all 48 nights. That is one window, not the whole year,
+    so this fails open: a night with no usable `occupancy` counts as bookable,
+    which degrades to the old all-nights behaviour rather than emptying the
+    rate table.
+    """
+    try:
+        if int(d.get("unbookable") or 0):
+            return False
+    except (TypeError, ValueError):
+        pass
+    occ = d.get("occupancy")
+    if occ is None:
+        return True
+    try:
+        return int(occ) == 0
+    except (TypeError, ValueError):
+        return True
+
+
 def summarise(days):
     buckets = {}
     for d in days:
@@ -114,15 +146,20 @@ def summarise(days):
         key = season_key(month, day)
         if key is None:
             continue
-        buckets.setdefault(key, []).append((price, min_stay))
+        buckets.setdefault(key, []).append((price, min_stay, is_bookable(d)))
 
     seasons = []
     for key, label, months, _start, _end in SEASONS:
         vals = buckets.get(key)
         if not vals:
             continue
-        prices = [p for p, _ in vals]
-        stays = [s for _, s in vals]
+        open_vals = [(p, s) for p, s, ok in vals if ok]
+        # A season with nothing left to sell still belongs in the table — the
+        # row vanishing mid-season would be a worse lie than a stale range.
+        # Fall back to every night and let "bookable" say what happened.
+        use = open_vals or [(p, s) for p, s, _ in vals]
+        prices = [p for p, _ in use]
+        stays = [s for _, s in use]
         seasons.append(
             {
                 "key": key,
@@ -132,10 +169,12 @@ def summarise(days):
                 "to": int(max(prices)),
                 "typical": int(statistics.median(prices)),
                 # A season can mix minimums: summer is mostly 2 nights but
-                # peak weeks ask 4, and the holidays ask 3. Publishing a single
-                # number is wrong in one direction or the other — mode hides
-                # the 3-night Christmas requirement, max brands the whole of
-                # summer as 4. So publish the real span and let the table say
+                # peak weeks have asked 4. Publishing a single number is wrong
+                # in one direction or the other — mode hides a tighter peak
+                # requirement, max brands the whole of summer as 4. These come
+                # from bookable nights only: a sold night's minimum is no use
+                # to someone working out whether their dates fit.
+                # So publish the real span and let the table say
                 # "2–4 nights". minStay stays the floor for anything numeric.
                 "minStay": int(min(stays)),
                 "minStayMax": int(max(stays)),
@@ -143,10 +182,13 @@ def summarise(days):
                     str(min(stays)) if min(stays) == max(stays)
                     else f"{min(stays)}\u2013{max(stays)}"
                 ),
+                "bookable": bool(open_vals),
             }
         )
 
-    all_prices = [p for vals in buckets.values() for p, _ in vals]
+    all_prices = [p for vals in buckets.values() for p, _, ok in vals if ok]
+    if not all_prices:
+        all_prices = [p for vals in buckets.values() for p, _, _ in vals]
     if not all_prices:
         raise ValueError("no usable prices in response")
 

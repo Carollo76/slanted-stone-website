@@ -1,7 +1,7 @@
 ---
 layout: blog-layout.html
 title: "A Poconos Cabin for Christmas Week or New Year's Eve"
-description: "Christmas and New Year in a Pocono Pines cabin that sleeps 8 — hot tub, Finnish sauna, 3.5 baths, and a 3-night minimum over the holidays. Book direct."
+description: "Christmas and New Year in a Pocono Pines cabin that sleeps 8 — hot tub, Finnish sauna, 3.5 baths, and a 2-night minimum over the holidays. Book direct."
 date: 2026-10-12
 tags: blog
 evergreen: true
@@ -15,11 +15,11 @@ Most Poconos holiday searches end in the same two places: a hotel room that spli
 
 The two things that catch people out at the holidays are the minimum stay and the price step.
 
-**Christmas: 23–26 December is a 3-night minimum.** So is **New Year: 30 December – 2 January.** The nights on either side — 18–22 December and 27–29 December — take a 2-night booking. If you want Christmas Eve through Boxing Day, that works. If you want only Christmas Eve and Christmas Day, it does not, and no amount of asking changes it.
+**The holidays run a 2-night minimum, right the way through** — Christmas Eve, Christmas Day, New Year's Eve, all of it. Any two consecutive nights is a booking you can actually make. So a short Christmas Eve and Christmas Day stay works here, which catches people out after they have been quoted week-long minimums elsewhere in the Poconos. Minimums can tighten as a week fills up, so treat the [booking page](https://slantedstone.bookeddirectly.host/property/c72709?utm_content=christmas_page) as the authority for the dates you actually want.
 
 Holiday nights are also the most expensive of the year here, by a wide margin. Rather than print a number that will be stale by the time you read this, the [live rate table on the homepage](/#rates) pulls from our pricing system every night and now shows **Christmas & New Year as its own season**, separately from late fall. Check it there and you will see the real figure for the dates you want, not a brochure number.
 
-Two practical notes. New Year's Eve prices at the very top of the year's range — the Christmas & New Year season is the only one that reaches it — and it books as part of a 3-night block, not alone. And the week between Christmas and New Year — 27, 28, 29 December — is a 2-night minimum at noticeably less than the Christmas and New Year peaks. If your dates are flexible, that mid-week gap is the value in the holiday fortnight.
+Two practical notes on how the price moves. **New Year's Eve is the most expensive night of the year here** — the Christmas & New Year season is the only one that reaches the top of the range, and the 31st sits at the very top of it, clear of Christmas Day. And the run-up nights before Christmas are the cheapest of the fortnight by a wide margin, often less than half what New Year's Eve asks. If your dates are flexible and you want the house wintry and decorated without paying the peak, the stretch before the 23rd is the value in the holiday fortnight.
 
 ## What the house gives you that a hotel does not
 
@@ -56,4 +56,4 @@ Book direct and save 10% against the listing sites — the same house, the same 
 
 Two things worth knowing before you book. **This is not a pet-friendly house** — no dogs, including over the holidays. And the three-bedroom count is the permitted one: the fourth room is a converted office set up as a kids' bunk room, which is a genuinely good place to put four children and not somewhere to put two adults who were promised a bedroom.
 
-If your dates fall in the 3-night windows and you are weighing Christmas against the quieter stretch after it, the 27–29 December gap is the one most people overlook.
+If you are weighing Christmas itself against the quieter nights around it, the stretch before the 23rd is the one most people overlook — the same house, the same sauna, the same snow, at the bottom of the holiday range.
